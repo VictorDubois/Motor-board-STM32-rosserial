@@ -40,12 +40,13 @@ void setup(void)
 
   nh.advertise(encoders_pub);
   nh.subscribe(twist_sub);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 }
 
 void loop(void)
 {
 	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
 	str_msg.data = hello;
 	chatter.publish(&str_msg);
