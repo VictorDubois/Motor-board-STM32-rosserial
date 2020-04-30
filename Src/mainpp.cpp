@@ -7,14 +7,17 @@
 #include <mainpp.h>
 #include <ros.h>
 #include <std_msgs/String.h>
+#include <goal_strategy/motors.h>
+#include <goal_strategy/motors_cmd.h>
 
 ros::NodeHandle nh;
 
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 char hello[] = "Hello world!";
+goal_strategy::encoders encoders_msg;
 
-ros::Publisher encoders_pub("encoders", &str_msg);
+ros::Publisher encoders_pub("encoders", &encoders_msg);
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
@@ -47,6 +50,12 @@ void loop(void)
 {
 	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+
+	encoders_msg.encoder_left = TIM1->CNT;;
+	encoders_msg.encoder_right = TIM2->CNT;;
+	encoders_pub.publish(&encoders_msg);
+
 
 	str_msg.data = hello;
 	chatter.publish(&str_msg);

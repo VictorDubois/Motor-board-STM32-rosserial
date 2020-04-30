@@ -80,6 +80,24 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define ENC2_SIGB_Pin GPIO_PIN_0
+#define ENC2_SIGB_GPIO_Port GPIOC
+#define ENC2_SIGA_Pin GPIO_PIN_1
+#define ENC2_SIGA_GPIO_Port GPIOC
+#define BRAKE_Pin GPIO_PIN_4
+#define BRAKE_GPIO_Port GPIOA
+#define TEMP_ALERT_Pin GPIO_PIN_0
+#define TEMP_ALERT_GPIO_Port GPIOB
+#define PWM_A_Pin GPIO_PIN_10
+#define PWM_A_GPIO_Port GPIOB
+#define Dir_A_Pin GPIO_PIN_7
+#define Dir_A_GPIO_Port GPIOC
+#define Dir_B_Pin GPIO_PIN_9
+#define Dir_B_GPIO_Port GPIOA
+#define ENC1_SIGA_PASSIVE_Pin GPIO_PIN_10
+#define ENC1_SIGA_PASSIVE_GPIO_Port GPIOA
+#define PWM_B_Pin GPIO_PIN_4
+#define PWM_B_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
