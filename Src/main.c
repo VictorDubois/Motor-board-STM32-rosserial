@@ -134,7 +134,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   int toto_switch = 0;
 
-  setup();
 
   volatile uint32_t encoderLeft = 1;
   volatile uint32_t encoderRight = 2;
@@ -153,6 +152,7 @@ int main(void)
 
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+  setup(&htim3);
 
   //char *msg = "Hello Nucleo Fun!\n\r";
 

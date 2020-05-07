@@ -9,6 +9,7 @@
 #include <std_msgs/String.h>
 #include <goal_strategy/motors.h>
 #include <goal_strategy/motors_cmd.h>
+#include "DCMotor.h"
 
 ros::NodeHandle nh;
 
@@ -33,8 +34,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
   nh.getHardware()->reset_rbuf();
 }
 
-void setup(void)
+void setup(TIM_HandleTypeDef* motorTimHandler)
 {
+	DCMotorHardware motorsHardware = DCMotorHardware(GPIOA, GPIO_PIN_6, GPIOA, GPIO_PIN_5, TIM1, TIM2, motorTimHandler, TIM_CHANNEL_4, motorTimHandler, TIM_CHANNEL_1);
+	DCMotor motors = DCMotor(&motorsHardware);
   nh.initNode();
   nh.advertise(chatter);
 
