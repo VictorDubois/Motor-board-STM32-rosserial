@@ -10,12 +10,26 @@
 DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
 }
 
-DCMotor::DCMotor() {}
+DCMotor::DCMotor() {
+	for (int i = 0; i< NB_MOTORS; i++) {
+		last_position[i] = 0;
+		ticks[i] = 0;
+		dir[i] = 0;
+		speed_ID[i] = 0;
+		speed_error_ID[i] = 0;
+		speed_integ_error[i] = 0;
+		voltage[i] = 0;
+		speed_command[i] = 0;
+		for (int j = 0; j < SMPL; j++) {
+			speed[i][j] = 0;
+			speed_error[i][j] = 0;
+		}
+	}
+}
 DCMotor::~DCMotor() {}
 
 void DCMotor::update() {
-
-	rebase_position();
+	get_speed();
 
 	hardware->setPWM(M_L, speed_order[M_L]);// no asserv yet
 	hardware->setPWM(M_R, speed_order[M_R]);// no asserv yet
@@ -25,15 +39,15 @@ void DCMotor::get_speed(){
     int32_t current_speed = 0;
 
     for(int i = 0; i < NB_MOTORS; i++){
-        current_speed =  position[i] - last_position[i];
-        last_position[i] = position[i];
+        current_speed =  ticks[i] - last_position[i];
+        last_position[i] = ticks[i];
 
         //rebase
-        if( current_speed > HALF_ENC_RESO ) {
-        	current_speed -= ENC_RESO;
+        if( current_speed > HALF_ENC_BUF_SIZE) {
+        	current_speed -= ENC_BUF_SIZE;
         }
-        if( current_speed < -HALF_ENC_RESO ) {
-        	current_speed += ENC_RESO;
+        if( current_speed < -HALF_ENC_BUF_SIZE ) {
+        	current_speed += ENC_BUF_SIZE;
         }
 
         // average
@@ -59,18 +73,8 @@ int32_t DCMotor::get_speed(uint8_t motor_id) {
 	return speed[motor_id][speed_ID[motor_id]];
 }
 
-void DCMotor::rebase_position() {
-
-    for(int i = 0; i < NB_MOTORS; i++){
-    	ticks[i] = hardware->getTicks(i);
-        if(ticks[i] > ENC_RESO) {
-        	ticks[i] -= ENC_RESO;
-        }
-        if(ticks[i] < 0) {
-        	ticks[i] += ENC_RESO;
-        }
-        position[i] = ticks[i];
-    }
+int32_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
+	return hardware->getTicks(encoder_id);
 }
 
 void DCMotor::set_speed_order(float lin, float rot) {

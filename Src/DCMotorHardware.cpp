@@ -32,8 +32,8 @@ DCMotorHardware::DCMotorHardware(GPIO_TypeDef* a_dir_right_gpio_bank,
 DCMotorHardware::DCMotorHardware() {}
 DCMotorHardware::~DCMotorHardware() {}
 
-uint32_t DCMotorHardware::getTicks(const uint32_t motorId) {
-	if (motorId == M_L) {
+uint32_t DCMotorHardware::getTicks(const uint32_t encoderId) {
+	if (encoderId == M_L) {
 		return encoder_left_timer->CNT;
 	}
 	return encoder_right_timer->CNT;

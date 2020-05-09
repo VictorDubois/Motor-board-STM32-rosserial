@@ -33,7 +33,7 @@ public:
 			const int32_t motor_left_timer_channel);
 	~DCMotorHardware();
 
-	uint32_t getTicks(uint32_t motorId);
+	uint32_t getTicks(uint32_t encoderId);
 
 	/**
 	 *

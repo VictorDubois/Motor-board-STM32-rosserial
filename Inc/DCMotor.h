@@ -18,6 +18,9 @@
 #define ENC_RESO        1024
 #define HALF_ENC_RESO   512
 
+#define ENC_BUF_SIZE 65536
+#define HALF_ENC_BUF_SIZE 32768
+
 #define SMPL            10 // nb of samples in memory
 #define SPEED_SMPL      10 // nb of sample to perform average
 
@@ -61,25 +64,24 @@ public:
 	 * @return the motor's current speed
 	 */
 	int32_t get_speed(uint8_t motor_id);
+
+	/**
+	 * @brief getter for the current ticks of a given encoder
+	 * @param encoder_id the ID of the encoder
+	 * @return the encoder's current positions
+	 */
+	int32_t get_encoder_ticks(uint8_t encoder_id);
 private:
 	int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
 
-	int32_t position[NB_MOTORS];
-	int32_t last_position[NB_MOTORS];
-
-	/**
-	 * @brief
-	 */
-	void rebase_position();
+	volatile int32_t last_position[NB_MOTORS];
 
 	void get_speed();
 
-	volatile long ticks[NB_MOTORS];
+	volatile int32_t ticks[NB_MOTORS];
 
 	int dir[NB_MOTORS];
-
-	volatile int32_t total_ticks[NB_MOTORS];
 
 	volatile int32_t speed[NB_MOTORS][SMPL];// samples to average
 	volatile uint8_t speed_ID[NB_MOTORS];

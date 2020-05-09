@@ -155,6 +155,7 @@ int main(void)
 
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+  HAL_TIM_Base_Start_IT(&htim7);
   setup();
 
 

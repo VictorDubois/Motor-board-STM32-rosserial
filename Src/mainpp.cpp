@@ -86,8 +86,10 @@ void MotorBoard::update() {
 	odom_msg.twist.twist.angular.z = 0;//(left_speed-right_speed)/2;
 	odom_pub.publish(&odom_msg);*/
 
-	encoders_msg.encoder_left = motors.get_speed(M_L);;
-	encoders_msg.encoder_right = motors.get_speed(M_R);;
+//	encoders_msg.encoder_left = motors.get_encoder_ticks(M_L);//get_speed(M_L);
+//	encoders_msg.encoder_right = motors.get_encoder_ticks(M_R);//get_speed(M_R);
+	encoders_msg.encoder_left = motors.get_speed(M_L);
+	encoders_msg.encoder_right = motors.get_speed(M_R);
 	encoders_pub.publish(&encoders_msg);
 
 	str_msg.data = "Hello world!";
