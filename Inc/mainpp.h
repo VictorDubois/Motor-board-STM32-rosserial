@@ -49,7 +49,7 @@ private:
 
 
 void setup();
-void loop(TIM_HandleTypeDef* motorTimHandler);
+void loop(TIM_HandleTypeDef* motorTimHandler, TIM_HandleTypeDef* loopTimHandler);
 
 #ifdef __cplusplus
 }

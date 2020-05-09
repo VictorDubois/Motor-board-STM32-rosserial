@@ -42,16 +42,20 @@ uint32_t DCMotorHardware::getTicks(const uint32_t encoderId) {
 void DCMotorHardware::setPWM(const int32_t pwm_left, const int32_t pwm_right) {
 	// Write dir according to pwm sign
 	if (pwm_left > 0) {
+		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(dir_left_gpio_bank, dir_left_gpio, GPIO_PIN_RESET);
 	}
 	else {
+		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(dir_left_gpio_bank, dir_left_gpio, GPIO_PIN_SET);
 	}
 
 	if (pwm_right > 0) {
+		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 		HAL_GPIO_WritePin(dir_right_gpio_bank, dir_right_gpio, GPIO_PIN_RESET);
 	}
 	else {
+		//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(dir_right_gpio_bank, dir_right_gpio, GPIO_PIN_SET);
 	}
 
@@ -59,9 +63,11 @@ void DCMotorHardware::setPWM(const int32_t pwm_left, const int32_t pwm_right) {
 	int32_t command = 0;
 	command = MAX(pwm_left, -pwm_left);
 	command = MIN(command, DUTYMAX);
-	__HAL_TIM_SET_COMPARE(motor_left_timer, motor_left_timer_channel, command);
+	__HAL_TIM_SET_COMPARE(motor_left_timer, TIM_CHANNEL_1, command);
+	//__HAL_TIM_SET_COMPARE(motor_left_timer, motor_left_timer_channel, command);
 
 	command = MAX(pwm_right, -pwm_right);
 	command = MIN(command, DUTYMAX);
-	__HAL_TIM_SET_COMPARE(motor_right_timer, motor_right_timer_channel, command);
+	__HAL_TIM_SET_COMPARE(motor_right_timer, TIM_CHANNEL_4, command);
+	//__HAL_TIM_SET_COMPARE(motor_right_timer, motor_right_timer_channel, command);
 }

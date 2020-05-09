@@ -22,7 +22,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
-	if(htim->Instance == TIM7) {
+	if(htim->Instance == TIM15) {
 		MotorBoard::getDCMotor().update();
 	}
 }
@@ -108,9 +108,10 @@ void setup()
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);//DIR_B
 }
 
-void loop(TIM_HandleTypeDef* a_motorTimHandler)
+void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler)
 {
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
+	HAL_TIM_Base_Start_IT(a_loopTimHandler);
 	while(true) {
 		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);

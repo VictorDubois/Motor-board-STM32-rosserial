@@ -8,12 +8,8 @@
 #include "DCMotor.h"
 
 DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
-}
-
-DCMotor::DCMotor() {
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
-		ticks[i] = 0;
 		dir[i] = 0;
 		speed_ID[i] = 0;
 		speed_error_ID[i] = 0;
@@ -26,6 +22,8 @@ DCMotor::DCMotor() {
 		}
 	}
 }
+
+DCMotor::DCMotor() {}
 DCMotor::~DCMotor() {}
 
 void DCMotor::update() {
@@ -39,8 +37,9 @@ void DCMotor::get_speed(){
     int32_t current_speed = 0;
 
     for(int i = 0; i < NB_MOTORS; i++){
-        current_speed =  ticks[i] - last_position[i];
-        last_position[i] = ticks[i];
+    	int32_t new_position = hardware->getTicks(i);
+        current_speed =  new_position - last_position[i];
+        last_position[i] = new_position;
 
         //rebase
         if( current_speed > HALF_ENC_BUF_SIZE) {

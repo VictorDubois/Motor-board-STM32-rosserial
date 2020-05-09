@@ -79,8 +79,6 @@ private:
 
 	void get_speed();
 
-	volatile int32_t ticks[NB_MOTORS];
-
 	int dir[NB_MOTORS];
 
 	volatile int32_t speed[NB_MOTORS][SMPL];// samples to average
