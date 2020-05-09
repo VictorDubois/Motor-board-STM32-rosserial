@@ -16,6 +16,26 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
 		speed_integ_error[i] = 0;
 		voltage[i] = 0;
 		speed_command[i] = 0;
+		speed_order[i] = 0;
+		for (int j = 0; j < SMPL; j++) {
+			speed[i][j] = 0;
+			speed_error[i][j] = 0;
+		}
+	}
+
+	a_hardware->setPWM(0, 0);
+}
+
+DCMotor::DCMotor() {
+	for (int i = 0; i< NB_MOTORS; i++) {
+		last_position[i] = 0;
+		dir[i] = 0;
+		speed_ID[i] = 0;
+		speed_error_ID[i] = 0;
+		speed_integ_error[i] = 0;
+		voltage[i] = 0;
+		speed_command[i] = 0;
+		speed_order[i] = 0;
 		for (int j = 0; j < SMPL; j++) {
 			speed[i][j] = 0;
 			speed_error[i][j] = 0;
@@ -23,14 +43,12 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
 	}
 }
 
-DCMotor::DCMotor() {}
 DCMotor::~DCMotor() {}
 
 void DCMotor::update() {
 	get_speed();
 
-	hardware->setPWM(M_L, speed_order[M_L]);// no asserv yet
-	hardware->setPWM(M_R, speed_order[M_R]);// no asserv yet
+	hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv yet
 }
 
 void DCMotor::get_speed(){
@@ -78,7 +96,8 @@ int32_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
 
 void DCMotor::set_speed_order(float lin, float rot) {
 	constexpr int32_t meters_to_tick = 1024/(M_PI * 0.068);
-	constexpr int32_t rad_to_tick = (0.25 * M_PI/2)/meters_to_tick;
+	constexpr int32_t rad_to_tick = (0.25 * M_PI/2)*meters_to_tick;
+
 	int32_t linear_speed = meters_to_tick * lin;// = resolution/perimeter = 1024/(pi*68mm) to convert from m/s => 4793
 	int32_t rotational_speed_order = rad_to_tick * rot;// = distance by wheel for half turn / speed in m/s = (250mm*pi/2) / 4793 to convert from rad/s => 1882
 

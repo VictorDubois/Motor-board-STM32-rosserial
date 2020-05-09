@@ -10,7 +10,7 @@ ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
-	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, twist.angular.z);
+	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
@@ -112,6 +112,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 {
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
+
 	while(true) {
 		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);

@@ -157,8 +157,6 @@ int main(void)
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   setup();
 
-
-
   //char *msg = "Hello Nucleo Fun!\n\r";
 
   //HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 0xFFFF);
@@ -185,7 +183,7 @@ int main(void)
 	  		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0xF);
 	  		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0xF);
 	  	}
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);//un-BRAKE
+	  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);//un-BRAKE
 	  continue;
     /* USER CODE END WHILE */
 
