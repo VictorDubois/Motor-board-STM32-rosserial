@@ -9,17 +9,47 @@
 #define MAINPP_H_
 
 #include <geometry_msgs/Twist.h>
+#include <ros.h>
+#include <std_msgs/String.h>
+//#include <nav_msgs/Odometry.h>
+#include <goal_strategy/motors.h>
+#include <goal_strategy/motors_cmd.h>
 #include "stm32f3xx_hal.h"
+#include "DCMotor.h"
+goal_strategy::encoders encoders_msg;
+ros::Publisher encoders_pub("encoders", &encoders_msg);
+std_msgs::String str_msg;
+ros::Publisher chatter("chatter", &str_msg);
+//nav_msgs::Odometry odom_msg;
+//ros::Publisher odom_pub("odom", &odom_msg);
+
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
+
+class MotorBoard
+{
+public:
+	MotorBoard(TIM_HandleTypeDef* motorTimHandler);
+	MotorBoard();
+	~MotorBoard();
+
+	static ros::NodeHandle& getNodeHandle(void);
+	static DCMotor& getDCMotor(void);
+
+	void update();
+private:
+	static ros::NodeHandle nh;
+	static DCMotorHardware motorsHardware;
+	static DCMotor motors;
+};
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 
-void setup(TIM_HandleTypeDef* motorTimHandler);
-void loop(void);
+void setup();
+void loop(TIM_HandleTypeDef* motorTimHandler);
 
 #ifdef __cplusplus
 }

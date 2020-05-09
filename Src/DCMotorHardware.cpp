@@ -29,6 +29,7 @@ DCMotorHardware::DCMotorHardware(GPIO_TypeDef* a_dir_right_gpio_bank,
 	motor_left_timer = a_motor_left_timer;
 	motor_left_timer_channel = a_motor_left_timer_channel;
 }
+DCMotorHardware::DCMotorHardware() {}
 DCMotorHardware::~DCMotorHardware() {}
 
 uint32_t DCMotorHardware::getTicks(const uint32_t motorId) {

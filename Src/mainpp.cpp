@@ -5,67 +5,116 @@
  *      Author: yoneken
  */
 #include <mainpp.h>
-#include <ros.h>
-#include <std_msgs/String.h>
-#include <goal_strategy/motors.h>
-#include <goal_strategy/motors_cmd.h>
-#include "DCMotor.h"
 
-ros::NodeHandle nh;
-
-std_msgs::String str_msg;
-ros::Publisher chatter("chatter", &str_msg);
-char hello[] = "Hello world!";
-goal_strategy::encoders encoders_msg;
-
-ros::Publisher encoders_pub("encoders", &encoders_msg);
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
-    //set_speed_order(twist.linear.x, twist.angular.z);
+	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, twist.angular.z);
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
-  nh.getHardware()->flush();
+	MotorBoard::getNodeHandle().getHardware()->flush();
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-  nh.getHardware()->reset_rbuf();
+	MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
 }
 
-void setup(TIM_HandleTypeDef* motorTimHandler)
-{
-	DCMotorHardware motorsHardware = DCMotorHardware(GPIOA, GPIO_PIN_6, GPIOA, GPIO_PIN_5, TIM1, TIM2, motorTimHandler, TIM_CHANNEL_4, motorTimHandler, TIM_CHANNEL_1);
-	DCMotor motors = DCMotor(&motorsHardware);
-  nh.initNode();
-  nh.advertise(chatter);
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+	if(htim->Instance == TIM7) {
+		MotorBoard::getDCMotor().update();
+	}
+}
 
+ros::NodeHandle MotorBoard::nh;
+DCMotorHardware MotorBoard::motorsHardware;
+DCMotor MotorBoard::motors;
+
+MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
+	motorsHardware = DCMotorHardware(GPIOA, GPIO_PIN_6, GPIOA, GPIO_PIN_5, TIM1, TIM2, a_motorTimHandler, TIM_CHANNEL_4, a_motorTimHandler, TIM_CHANNEL_1);
+	motors = DCMotor(&motorsHardware);
+	nh.initNode();
+	//nh.advertise(odom_pub);
+	nh.advertise(chatter);
+	nh.advertise(encoders_pub);
+	nh.subscribe(twist_sub);
+}
+MotorBoard::MotorBoard() {}
+MotorBoard::~MotorBoard() {}
+
+ros::NodeHandle& MotorBoard::getNodeHandle(void) {
+	return nh;
+}
+
+DCMotor& MotorBoard::getDCMotor(void) {
+	return motors;
+}
+
+void MotorBoard::update() {
+	//int32_t right_speed = motors.get_speed(M_R);
+	//int32_t left_speed = motors.get_speed(M_L);
+
+	/*odom_msg.header.frame_id = "toto";
+	odom_msg.header.stamp.nsec = 0;
+	odom_msg.header.stamp.sec = 0;
+	odom_msg.header.seq = 0;
+	odom_msg.child_frame_id = "toto";
+
+	for (unsigned int i = 0; i < (sizeof(odom_msg.pose.covariance)/sizeof(*(odom_msg.pose.covariance))); i++){
+		odom_msg.pose.covariance[i] = 0;
+	}
+
+	odom_msg.pose.pose.position.x = 0;
+	odom_msg.pose.pose.position.y = 0;
+	odom_msg.pose.pose.position.z = 0;
+
+	odom_msg.pose.pose.orientation.x = 0;
+	odom_msg.pose.pose.orientation.y = 0;
+	odom_msg.pose.pose.orientation.z = 0;
+
+	for (unsigned int i = 0; i < (sizeof(odom_msg.twist.covariance)/sizeof(*(odom_msg.twist.covariance))); i++){
+		odom_msg.twist.covariance[i] = 0;
+	}
+
+	odom_msg.twist.twist.linear.x = 0;//(left_speed+right_speed)/2;
+	odom_msg.twist.twist.linear.y = 0;
+	odom_msg.twist.twist.linear.z = 0;
+
+	odom_msg.twist.twist.angular.x = 0;
+	odom_msg.twist.twist.angular.y = 0;
+	odom_msg.twist.twist.angular.z = 0;//(left_speed-right_speed)/2;
+	odom_pub.publish(&odom_msg);*/
+
+	encoders_msg.encoder_left = motors.get_speed(M_L);;
+	encoders_msg.encoder_right = motors.get_speed(M_R);;
+	encoders_pub.publish(&encoders_msg);
+
+	str_msg.data = "Hello world!";
+	chatter.publish(&str_msg);
+	nh.spinOnce();
+}
+
+void setup()
+{
   //pinMode(BRAKE, OUTPUT);
   //digitalWrite(BRAKE, LOW);
 
-  nh.advertise(encoders_pub);
-  nh.subscribe(twist_sub);
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);//LED
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);//BRAKE
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);//DIR_A
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);//DIR_B
 }
 
-void loop(void)
+void loop(TIM_HandleTypeDef* a_motorTimHandler)
 {
-	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+	MotorBoard myboard = MotorBoard(a_motorTimHandler);
+	while(true) {
+		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
+		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
+		myboard.update();
 
-	encoders_msg.encoder_left = TIM1->CNT;;
-	encoders_msg.encoder_right = TIM2->CNT;;
-	encoders_pub.publish(&encoders_msg);
-
-
-	str_msg.data = hello;
-	chatter.publish(&str_msg);
-	nh.spinOnce();
-
-	HAL_Delay(1000);
+		HAL_Delay(100);
+	}
 }

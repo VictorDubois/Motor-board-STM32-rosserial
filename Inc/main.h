@@ -80,6 +80,7 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define PWM_MAX 0xFF
 #define ENC2_SIGB_Pin GPIO_PIN_0
 #define ENC2_SIGB_GPIO_Port GPIOC
 #define ENC2_SIGA_Pin GPIO_PIN_1

@@ -39,6 +39,7 @@ class DCMotor
 {
 
 public:
+	DCMotor();
 	DCMotor(DCMotorHardware* hardware);
 	~DCMotor();
 
@@ -53,6 +54,13 @@ public:
 	 * Runs the main loop
 	 */
 	void update();
+
+	/**
+	 * @brief getter for the current speed of a given motor
+	 * @param motor_id the ID of the motor for which we want the speed
+	 * @return the motor's current speed
+	 */
+	int32_t get_speed(uint8_t motor_id);
 private:
 	int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;

@@ -10,14 +10,15 @@
 DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
 }
 
+DCMotor::DCMotor() {}
 DCMotor::~DCMotor() {}
 
 void DCMotor::update() {
 
 	rebase_position();
 
-	hardware->setPWM(M_L, 10);
-	hardware->setPWM(M_R, 10);
+	hardware->setPWM(M_L, speed_order[M_L]);// no asserv yet
+	hardware->setPWM(M_R, speed_order[M_R]);// no asserv yet
 }
 
 void DCMotor::get_speed(){
@@ -52,6 +53,10 @@ void DCMotor::get_speed(){
 
         speed[i][speed_ID[i]] /= SPEED_SMPL; //mean
     }
+}
+
+int32_t DCMotor::get_speed(uint8_t motor_id) {
+	return speed[motor_id][speed_ID[motor_id]];
 }
 
 void DCMotor::rebase_position() {

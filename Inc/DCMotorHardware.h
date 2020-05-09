@@ -12,7 +12,7 @@
 #define M_L             0
 #define M_R             1
 #define NB_MOTORS 		2
-#define DUTYMAX         0xFF
+#define DUTYMAX         0xFF//PWM_MAX
 
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
@@ -20,6 +20,7 @@
 class DCMotorHardware
 {
 public:
+	DCMotorHardware();
 	DCMotorHardware(GPIO_TypeDef* dir_right_gpio_bank,
 			const uint16_t dir_right_gpio,
 			GPIO_TypeDef* dir_left_gpio_bank,
