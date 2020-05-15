@@ -48,7 +48,21 @@ DCMotor::~DCMotor() {}
 void DCMotor::update() {
 	get_speed();
 
-	hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv yet
+	control_ramp_speed();
+
+	//hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv
+	hardware->setPWM(voltage[M_L], voltage[M_R]);
+
+	for(int i = 0; i < NB_MOTORS; i++){
+		speed_ID[i]++;
+		if(speed_ID[i] >= SMPL) {
+			speed_ID[i]=0;
+		}
+		speed_error_ID[i]++;
+		if(speed_error_ID[i] >= SMPL) {
+			speed_error_ID[i]=0;
+		}
+	}
 }
 
 void DCMotor::get_speed(){
@@ -110,4 +124,32 @@ void DCMotor::set_speed_order(float lin, float rot) {
 	right_speed_order = MIN(right_speed_order, SPEED_MAX);
 	right_speed_order = MAX(right_speed_order, -SPEED_MAX);
 	speed_order[M_R] = right_speed_order;
+}
+
+void DCMotor::control_ramp_speed(void) {
+    //if( stopped ) return;
+
+    for(int i = 0; i < NB_MOTORS; i++){
+        if( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] >= ACCEL_MAX) {
+        	speed_command[i] = speed[i][speed_ID[i]]+ACCEL_MAX;
+        }
+        else if ( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] <= -ACCEL_MAX ) {
+        	speed_command[i] = speed[i][speed_ID[i]]-ACCEL_MAX;
+        }
+        else {
+        	speed_command[i] = speed_order[i];
+        }
+
+        speed_error[i][speed_error_ID[i]] = speed_command[i] - speed[i][speed_ID[i]];
+        for(int j = 0; j < SMPL; j++){
+            speed_integ_error[i] += speed_error[i][j];
+        }
+
+        voltage[i] =
+             (S_KP*speed_error[i][speed_error_ID[i]] +
+             S_KI*speed_integ_error[i]);
+
+        voltage[i] = MIN(voltage[i], DUTYMAX);
+        voltage[i] = MAX(voltage[i], -DUTYMAX);
+    }
 }

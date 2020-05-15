@@ -78,6 +78,8 @@ private:
 	volatile int32_t last_position[NB_MOTORS];
 
 	void get_speed();
+	void control_ramp_speed(void);
+
 
 	int dir[NB_MOTORS];
 
