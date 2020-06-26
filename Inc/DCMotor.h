@@ -31,8 +31,8 @@
 
 #define SPEED_MAX       2048//2048 // ticks per s = 2tr/s
 #define ACCEL_MAX       1024//1024 // ticks per s per s
-#define S_KP            0.07 //0.08
-#define S_KI            0.0015 //0.002
+#define S_KP            0.007//0.07 //0.08
+#define S_KI            0.00015//0.0015 //0.002
 
 #ifndef M_PI
 #define M_PI 3.14159265359
@@ -91,7 +91,7 @@ private:
 
 	volatile int32_t speed_integ_error[NB_MOTORS];
 
-	volatile int32_t voltage[NB_MOTORS];//no need to have mutliple samples
+	volatile int32_t voltage[NB_MOTORS];//no need to have multiple samples
 
 	int32_t speed_command[NB_MOTORS];
 };

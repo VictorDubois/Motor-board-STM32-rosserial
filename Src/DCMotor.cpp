@@ -90,8 +90,8 @@ void DCMotor::get_speed(){
         }
 
         speed[i][speed_ID[i]] *= SPEED_SMPL;
-        speed[i][speed_ID[i]] -= speed[i][(uint8_t)(speed_ID[i]+SMPL-SPEED_SMPL)%SMPL];
-        //speed[i][speed_ID[i]] -= speed[i][(uint8_t)(speed_ID[MG]+SMPL-SPEED_SMPL)%SMPL];
+        //speed[i][speed_ID[i]] -= speed[i][(uint8_t)(speed_ID[i]+SMPL-SPEED_SMPL +1)%SMPL];
+        speed[i][speed_ID[i]] -= speed[i][(uint8_t)(speed_ID[i]+SMPL-SPEED_SMPL+1)%SMPL];
         // format
         speed[i][speed_ID[i]] += // ticks per second
         		current_speed * SAMPLING_PER_SEC;
@@ -109,11 +109,11 @@ int32_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
 }
 
 void DCMotor::set_speed_order(float lin, float rot) {
-	constexpr int32_t meters_to_tick = 1024/(M_PI * 0.068);
-	constexpr int32_t rad_to_tick = (0.25 * M_PI/2)*meters_to_tick;
+	constexpr int32_t meters_to_tick = 4096/(M_PI * 0.068);
+	constexpr int32_t rad_to_tick = meters_to_tick*(0.25 /2);
 
-	int32_t linear_speed = meters_to_tick * lin;// = resolution/perimeter = 1024/(pi*68mm) to convert from m/s => 4793
-	int32_t rotational_speed_order = rad_to_tick * rot;// = distance by wheel for half turn / speed in m/s = (250mm*pi/2) / 4793 to convert from rad/s => 1882
+	int32_t linear_speed = meters_to_tick * lin;// = resolution/perimeter = 4096/(pi*68mm) to convert from m/s => 19172
+	int32_t rotational_speed_order = rad_to_tick * rot;// = radius when turning on the spot (=half entraxe) / speed in m/s = (250mm/2) * 19172 to convert from rad/s => 2396
 
 	int32_t left_speed_order = linear_speed+rotational_speed_order;
 	left_speed_order = MIN(left_speed_order, SPEED_MAX);
