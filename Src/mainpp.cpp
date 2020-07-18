@@ -7,10 +7,18 @@
 #include <mainpp.h>
 
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
+ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
+}
+
+void enable_motor_cb(const std_msgs::Bool& enable)
+{
+	if(!enable.data) {
+		MotorBoard::getDCMotor().resetMotors();
+	}
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
@@ -39,6 +47,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.advertise(chatter);
 	nh.advertise(encoders_pub);
 	nh.subscribe(twist_sub);
+	nh.subscribe(enable_sub);
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}

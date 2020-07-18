@@ -71,6 +71,11 @@ public:
 	 * @return the encoder's current positions
 	 */
 	int32_t get_encoder_ticks(uint8_t encoder_id);
+
+	/**
+	 * @brief stop the motors and reset the asserv
+	 */
+	void resetMotors();
 private:
 	int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;

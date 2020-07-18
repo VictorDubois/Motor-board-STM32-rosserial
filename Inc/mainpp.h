@@ -9,6 +9,7 @@
 #define MAINPP_H_
 
 #include <geometry_msgs/Twist.h>
+#include <std_msgs/Bool.h>
 #include <ros.h>
 #include <std_msgs/String.h>
 //#include <nav_msgs/Odometry.h>
@@ -25,6 +26,7 @@ ros::Publisher chatter("chatter", &str_msg);
 
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
+void enable_motor_cb(const std_msgs::Bool& enable);
 
 class MotorBoard
 {

@@ -8,8 +8,14 @@
 #include "DCMotor.h"
 
 DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
+	resetMotors();
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
+	}
+}
+
+void DCMotor::resetMotors() {
+	for (int i = 0; i< NB_MOTORS; i++) {
 		dir[i] = 0;
 		speed_ID[i] = 0;
 		speed_error_ID[i] = 0;
@@ -23,7 +29,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
 		}
 	}
 
-	a_hardware->setPWM(0, 0);
+	hardware->setPWM(0, 0);
 }
 
 DCMotor::DCMotor() {

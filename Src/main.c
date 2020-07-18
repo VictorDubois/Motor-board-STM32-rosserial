@@ -157,6 +157,7 @@ int main(void)
   HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
   setup();
 
+
   //char *msg = "Hello Nucleo Fun!\n\r";
 
   //HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), 0xFFFF);
