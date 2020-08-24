@@ -9,6 +9,7 @@
 #define DCMOTOR_H_
 
 #include "DCMotorHardware.h"
+#include "MCP3002.h"
 #include "stm32f3xx_hal.h"
 
 #define M_L             0
@@ -43,7 +44,7 @@ class DCMotor
 
 public:
 	DCMotor();
-	DCMotor(DCMotorHardware* hardware);
+	DCMotor(DCMotorHardware* hardware, MCP3002* current_reader);
 	~DCMotor();
 
 	/**
@@ -63,14 +64,28 @@ public:
 	 * @param motor_id the ID of the motor for which we want the speed
 	 * @return the motor's current speed
 	 */
-	int32_t get_speed(uint8_t motor_id);
+	int32_t get_speed(const uint8_t motor_id);
 
 	/**
 	 * @brief getter for the current ticks of a given encoder
 	 * @param encoder_id the ID of the encoder
 	 * @return the encoder's current positions
 	 */
-	int32_t get_encoder_ticks(uint8_t encoder_id);
+	int32_t get_encoder_ticks(const uint8_t encoder_id);
+
+	/**
+	 * @brief getter for the accumulated current consumed by the motor over 20 iterations
+	 * @param motor_id the ID of the motor
+	 * @return the current
+	 */
+	int32_t get_accumulated_current(const uint8_t motor_id);
+
+	/**
+	 * @brief getter for the current consumed by the motor
+	 * @param motor_id the ID of the motor
+	 * @return the current
+	 */
+	int32_t get_current(const uint8_t motor_id);
 
 	/**
 	 * @brief stop the motors and reset the asserv
@@ -79,6 +94,7 @@ public:
 private:
 	int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
+	MCP3002* current_reader;
 
 	volatile int32_t last_position[NB_MOTORS];
 
@@ -97,6 +113,11 @@ private:
 	volatile int32_t speed_integ_error[NB_MOTORS];
 
 	volatile int32_t voltage[NB_MOTORS];//no need to have multiple samples
+
+	int32_t accumulated_current[NB_MOTORS];
+	int32_t current[NB_MOTORS];
+
+	volatile int32_t stopped_timeout;
 
 	int32_t speed_command[NB_MOTORS];
 };

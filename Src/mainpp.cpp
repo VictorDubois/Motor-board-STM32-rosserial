@@ -38,14 +38,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 ros::NodeHandle MotorBoard::nh;
 DCMotorHardware MotorBoard::motorsHardware;
 DCMotor MotorBoard::motors;
+MCP3002 MotorBoard::currentReader;
 
 MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motorsHardware = DCMotorHardware(GPIOA, GPIO_PIN_6, GPIOA, GPIO_PIN_5, TIM1, TIM2, a_motorTimHandler, TIM_CHANNEL_4, a_motorTimHandler, TIM_CHANNEL_1);
-	motors = DCMotor(&motorsHardware);
+	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
+	motors = DCMotor(&motorsHardware, &currentReader);
 	nh.initNode();
 	//nh.advertise(odom_pub);
 	nh.advertise(chatter);
 	nh.advertise(encoders_pub);
+	nh.advertise(motors_pub);
 	nh.subscribe(twist_sub);
 	nh.subscribe(enable_sub);
 }
@@ -101,6 +104,15 @@ void MotorBoard::update() {
 //	encoders_msg.encoder_right = motors.get_speed(M_R);
 	encoders_pub.publish(&encoders_msg);
 
+	motors_msg.encoders = encoders_msg;
+	motors_msg.current_left = motors.get_current(0);
+	motors_msg.current_right = motors.get_current(1);
+
+	motors_msg.current_left_accumulated = motors.get_accumulated_current(0);
+	motors_msg.current_right_accumulated = motors.get_accumulated_current(1);
+
+	motors_pub.publish(&motors_msg);
+
 	str_msg.data = "Hello world!";
 	chatter.publish(&str_msg);
 	nh.spinOnce();
@@ -117,6 +129,8 @@ void setup()
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);//DIR_B
 }
 
+
+
 void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler)
 {
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
@@ -127,6 +141,8 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
 		myboard.update();
+
+
 
 		HAL_Delay(100);
 	}

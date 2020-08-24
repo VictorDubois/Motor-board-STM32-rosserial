@@ -7,7 +7,7 @@
 
 #include "DCMotor.h"
 
-DCMotor::DCMotor(DCMotorHardware* a_hardware) : hardware(a_hardware) {
+DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
 	resetMotors();
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
@@ -23,6 +23,8 @@ void DCMotor::resetMotors() {
 		voltage[i] = 0;
 		speed_command[i] = 0;
 		speed_order[i] = 0;
+		current[i] = 0;
+		accumulated_current[i] = 0;
 		for (int j = 0; j < SMPL; j++) {
 			speed[i][j] = 0;
 			speed_error[i][j] = 0;
@@ -42,6 +44,8 @@ DCMotor::DCMotor() {
 		voltage[i] = 0;
 		speed_command[i] = 0;
 		speed_order[i] = 0;
+		accumulated_current[i] = 0;
+		current[i] = 0;
 		for (int j = 0; j < SMPL; j++) {
 			speed[i][j] = 0;
 			speed_error[i][j] = 0;
@@ -54,10 +58,16 @@ DCMotor::~DCMotor() {}
 void DCMotor::update() {
 	get_speed();
 
-	control_ramp_speed();
+	if (stopped_timeout > 0) {
+		stopped_timeout--;
+		resetMotors();
+	}
+	else {
+		control_ramp_speed();
 
-	//hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv
-	hardware->setPWM(voltage[M_L], voltage[M_R]);
+		//hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv
+		hardware->setPWM(voltage[M_L], voltage[M_R]);
+	}
 
 	for(int i = 0; i < NB_MOTORS; i++){
 		speed_ID[i]++;
@@ -67,6 +77,17 @@ void DCMotor::update() {
 		speed_error_ID[i]++;
 		if(speed_error_ID[i] >= SMPL) {
 			speed_error_ID[i]=0;
+		}
+
+		current[i] = current_reader->readCurrent(i);
+		if (current[i] == CURRENT_READER_OFFLINE) {
+			stopped_timeout = 300;
+		}
+
+		accumulated_current[i] = 0.95f * accumulated_current[i] + current[i]; // measure over 20 iterations
+
+		if (accumulated_current[i] > OVER_CURRENT_THRESHOLD) {
+			stopped_timeout = 300;
 		}
 	}
 }
@@ -112,6 +133,14 @@ int32_t DCMotor::get_speed(uint8_t motor_id) {
 
 int32_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
 	return hardware->getTicks(encoder_id);
+}
+
+int32_t DCMotor::get_accumulated_current(uint8_t motor_id) {
+	return accumulated_current[motor_id];
+}
+
+int32_t DCMotor::get_current(uint8_t motor_id) {
+	return current[motor_id];
 }
 
 void DCMotor::set_speed_order(float lin, float rot) {
