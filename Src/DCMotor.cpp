@@ -116,14 +116,7 @@ void DCMotor::get_speed(){
         	speed[i][speed_ID[i]] = speed[i][speed_ID[i]-1];
         }
 
-        speed[i][speed_ID[i]] *= SPEED_SMPL;
-        //speed[i][speed_ID[i]] -= speed[i][(uint8_t)(speed_ID[i]+SMPL-SPEED_SMPL +1)%SMPL];
-        speed[i][speed_ID[i]] -= speed[i][(uint8_t)(speed_ID[i]+SMPL-SPEED_SMPL+1)%SMPL];
-        // format
-        speed[i][speed_ID[i]] += // ticks per second
-        		current_speed * SAMPLING_PER_SEC;
-
-        speed[i][speed_ID[i]] /= SPEED_SMPL; //mean
+        speed[i][speed_ID[i]] = current_speed * SAMPLING_PER_SEC;// ticks per second
     }
 }
 
