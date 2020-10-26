@@ -95,6 +95,11 @@ int fixOverflow(long after, long before)
     return after - before;
 }
 
+float ticksToMillimeters(int32_t ticks)
+{
+	return (DIST_PER_REVOLUTION * (float)ticks / TICKS_PER_REVOLUTION);
+}
+
 /*
         Given current value of both encoders
         return the linear dist by approximating it as the average of both wheels' linear distances.
@@ -110,8 +115,8 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
     diff_encoder2 = fixOverflow(encoder2, last_encoder_right);
 
     // Compute each wheel's dist and approximate linear dist as their average
-    dist1 = (DIST_PER_REVOLUTION * (float)diff_encoder1 / TICKS_PER_REVOLUTION);
-    dist2 = (DIST_PER_REVOLUTION * (float)diff_encoder2 / TICKS_PER_REVOLUTION);
+    dist1 = ticksToMillimeters(diff_encoder1);
+    dist2 = ticksToMillimeters(diff_encoder2);
     dist = (dist1 + dist2) / 2.0f;
 
     if (fabsf(dist) > 500.)
@@ -177,21 +182,21 @@ void MotorBoard::update() {
 	Y += linear_dist * sin(current_theta_rad);
 
 	odom_light_msg.header.frame_id = "odom_light";
-	odom_light_msg.pose.position.x = 0;
-	odom_light_msg.pose.position.y = 0;
+	odom_light_msg.pose.position.x = X;
+	odom_light_msg.pose.position.y = Y;
 	odom_light_msg.pose.position.z = 0;
 
 	odom_light_msg.pose.orientation.x = 0;
 	odom_light_msg.pose.orientation.y = 0;
 	odom_light_msg.pose.orientation.z = current_theta_rad;
 
-	odom_light_msg.speed.linear.x = (left_speed+right_speed)/2;
+	odom_light_msg.speed.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 	odom_light_msg.speed.linear.y = 0;
 	odom_light_msg.speed.linear.z = 0;
 
 	odom_light_msg.speed.angular.x = 0;
 	odom_light_msg.speed.angular.y = 0;
-	odom_light_msg.speed.angular.z = (left_speed-right_speed)/2;
+	odom_light_msg.speed.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f;
 	odom_light_msg.current_motor_left = motors.get_accumulated_current(0);
 	odom_light_msg.current_motor_right = motors.get_accumulated_current(1);
 
