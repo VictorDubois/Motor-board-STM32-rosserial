@@ -47,6 +47,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motors = DCMotor(&motorsHardware, &currentReader);
 	nh.initNode();
 	//nh.advertise(odom_pub);
+	nh.advertise(odom_light_pub);
 	nh.advertise(chatter);
 	nh.advertise(encoders_pub);
 	nh.advertise(motors_pub);
@@ -193,6 +194,8 @@ void MotorBoard::update() {
 	odom_light_msg.speed.angular.z = (left_speed-right_speed)/2;
 	odom_light_msg.current_motor_left = motors.get_accumulated_current(0);
 	odom_light_msg.current_motor_right = motors.get_accumulated_current(1);
+
+	odom_light_pub.publish(&odom_light_msg);
 
 	encoders_msg.encoder_left = encoder_left;//get_speed(M_L);
 	encoders_msg.encoder_right = encoder_right;//get_speed(M_R);
