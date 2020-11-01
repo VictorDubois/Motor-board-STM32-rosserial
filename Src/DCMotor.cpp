@@ -11,22 +11,24 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	resetMotors();
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
+		speed_ID[i] = 0;
+		current[i] = 0;
+		accumulated_current[i] = 0;
+		for (int j = 0; j < SMPL; j++) {
+			speed[i][j] = 0;
+		}
 	}
 }
 
 void DCMotor::resetMotors() {
 	for (int i = 0; i< NB_MOTORS; i++) {
 		dir[i] = 0;
-		speed_ID[i] = 0;
 		speed_error_ID[i] = 0;
 		speed_integ_error[i] = 0;
 		voltage[i] = 0;
 		speed_command[i] = 0;
 		speed_order[i] = 0;
-		current[i] = 0;
-		accumulated_current[i] = 0;
 		for (int j = 0; j < SMPL; j++) {
-			speed[i][j] = 0;
 			speed_error[i][j] = 0;
 		}
 	}
