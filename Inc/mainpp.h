@@ -9,23 +9,24 @@
 #define MAINPP_H_
 
 #include <geometry_msgs/Twist.h>
-#include <goal_strategy/motors.h>
-#include <goal_strategy/odom_light.h>
+#include <krabi_msgs/motors.h>
+#include <krabi_msgs/odom_light.h>
 #include <std_msgs/Bool.h>
 #include <ros.h>
 #include <std_msgs/String.h>
 //#include <nav_msgs/Odometry.h>
-#include <goal_strategy/motors.h>
-#include <goal_strategy/motors_cmd.h>
+#include <krabi_msgs/motors_cmd.h>
+#include <krabi_msgs/SetOdom.h>
 #include <MCP3002.h>
 #include "stm32f3xx_hal.h"
 #include "DCMotor.h"
-goal_strategy::encoders encoders_msg;
-goal_strategy::motors motors_msg;
-goal_strategy::odom_light odom_light_msg;
+krabi_msgs::encoders encoders_msg;
+krabi_msgs::motors motors_msg;
+krabi_msgs::odom_light odom_light_msg;
 ros::Publisher encoders_pub("encoders", &encoders_msg);
 ros::Publisher motors_pub("motors", &motors_msg);
 ros::Publisher odom_light_pub("odom_light", &odom_light_msg);
+
 std_msgs::String str_msg;
 ros::Publisher chatter("chatter", &str_msg);
 //nav_msgs::Odometry odom_msg;
@@ -56,7 +57,6 @@ private:
 	float compute_linear_dist(const long encoder_left, const long encoder_right);
 	float X;
 	float Y;
-
 };
 
 #ifdef __cplusplus
