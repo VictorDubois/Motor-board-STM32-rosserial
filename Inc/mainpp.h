@@ -32,9 +32,13 @@ ros::Publisher chatter("chatter", &str_msg);
 //nav_msgs::Odometry odom_msg;
 //ros::Publisher odom_pub("odom", &odom_msg);
 
+float get_orientation_float(long encoder1, long encoder2);
+int fixOverflow(long after, long before);
+float ticksToMillimeters(int32_t ticks);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
 void enable_motor_cb(const std_msgs::Bool& enable);
+void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res);
 
 class MotorBoard
 {
@@ -45,7 +49,7 @@ public:
 
 	static ros::NodeHandle& getNodeHandle(void);
 	static DCMotor& getDCMotor(void);
-
+	static void set_odom(float a_x, float a_y, float a_theta);
 	void update();
 private:
 	static ros::NodeHandle nh;
@@ -55,8 +59,9 @@ private:
 	volatile long last_encoder_left = 0;
 	volatile long last_encoder_right = 0;
 	float compute_linear_dist(const long encoder_left, const long encoder_right);
-	float X;
-	float Y;
+	static float X;
+	static float Y;
+	static float theta_offset;
 };
 
 #ifdef __cplusplus

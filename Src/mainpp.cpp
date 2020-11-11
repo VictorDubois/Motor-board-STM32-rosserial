@@ -6,9 +6,13 @@
  */
 #include <mainpp.h>
 #include <constants.h>
-
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
+ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_cb);
+
+void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
+{
+}
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
@@ -41,12 +45,29 @@ DCMotorHardware MotorBoard::motorsHardware;
 DCMotor MotorBoard::motors;
 MCP3002 MotorBoard::currentReader;
 
+float MotorBoard::X = 0;
+float MotorBoard::Y = 0;
+float MotorBoard::theta_offset = 0;
+
+void MotorBoard::set_odom(float a_x, float a_y, float a_theta)
+{
+	X = a_x;
+	Y = a_y;
+	int32_t encoder_left = motors.get_encoder_ticks(M_L);
+	int32_t encoder_right = motors.get_encoder_ticks(M_R);
+
+	float current_theta = get_orientation_float(encoder_left, encoder_right);
+	theta_offset = a_theta - current_theta;
+}
+
 MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motorsHardware = DCMotorHardware(GPIOA, GPIO_PIN_6, GPIOA, GPIO_PIN_5, TIM1, TIM2, a_motorTimHandler, TIM_CHANNEL_4, a_motorTimHandler, TIM_CHANNEL_1);
 	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
 	motors = DCMotor(&motorsHardware, &currentReader);
+
 	nh.initNode();
 	//nh.advertise(odom_pub);
+	nh.advertiseService(set_odom_srv);
 	nh.advertise(odom_light_pub);
 	nh.advertise(chatter);
 	nh.advertise(encoders_pub);
@@ -175,6 +196,7 @@ void MotorBoard::update() {
 
 	float linear_dist = compute_linear_dist(encoder_left, encoder_right);
 	float current_theta = get_orientation_float(encoder_left, encoder_right);
+	current_theta += theta_offset;
 
 	float current_theta_rad = current_theta * M_PI / 180.f;
 
