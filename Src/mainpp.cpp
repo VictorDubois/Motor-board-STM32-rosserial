@@ -12,6 +12,7 @@ ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_
 
 void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
 {
+	MotorBoard::set_odom(req.x, req.y, req.theta);
 }
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
@@ -69,11 +70,12 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	//nh.advertise(odom_pub);
 	nh.advertiseService(set_odom_srv);
 	nh.advertise(odom_light_pub);
-	nh.advertise(chatter);
-	nh.advertise(encoders_pub);
-	nh.advertise(motors_pub);
+	//nh.advertise(chatter);
+	//nh.advertise(encoders_pub);
+	//nh.advertise(motors_pub);
 	nh.subscribe(twist_sub);
 	nh.subscribe(enable_sub);
+	nh.negotiateTopics();
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}
@@ -228,7 +230,7 @@ void MotorBoard::update() {
 	encoders_msg.encoder_right = encoder_right;//get_speed(M_R);
 //	encoders_msg.encoder_left = motors.get_speed(M_L);
 //	encoders_msg.encoder_right = motors.get_speed(M_R);
-	encoders_pub.publish(&encoders_msg);
+	//encoders_pub.publish(&encoders_msg);
 
 	motors_msg.encoders = encoders_msg;
 	motors_msg.current_left = motors.get_current(0);
@@ -237,10 +239,10 @@ void MotorBoard::update() {
 	motors_msg.current_left_accumulated = motors.get_accumulated_current(0);
 	motors_msg.current_right_accumulated = motors.get_accumulated_current(1);
 
-	motors_pub.publish(&motors_msg);
+	//motors_pub.publish(&motors_msg);
 
 	str_msg.data = "Hello world!";
-	chatter.publish(&str_msg);
+	//chatter.publish(&str_msg);
 	nh.spinOnce();
 }
 
