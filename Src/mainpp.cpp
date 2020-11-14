@@ -9,6 +9,15 @@
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
 ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_cb);
+ros::ServiceServer<krabi_msgs::motorsParamsRequest, krabi_msgs::motorsParamsResponse> set_motors_param_srv("set_motors_param", set_motors_param_cb);
+
+void set_motors_param_cb(const krabi_msgs::motorsParamsRequest &req, krabi_msgs::motorsParamsResponse &res)
+{
+	MotorBoard::getDCMotor().set_max_speed(millimetersToTicks(req.max_speed * 1000));
+	MotorBoard::getDCMotor().set_max_acceleration(millimetersToTicks(req.max_acceleration * 1000));
+	MotorBoard::getDCMotor().set_pid_i(req.PID_I);
+	MotorBoard::getDCMotor().set_pid_p(req.PID_P);
+}
 
 void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
 {
@@ -69,6 +78,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.initNode();
 	//nh.advertise(odom_pub);
 	nh.advertiseService(set_odom_srv);
+	nh.advertiseService(set_motors_param_srv);
 	nh.advertise(odom_light_pub);
 	//nh.advertise(chatter);
 	//nh.advertise(encoders_pub);
@@ -76,6 +86,10 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.subscribe(twist_sub);
 	nh.subscribe(enable_sub);
 	nh.negotiateTopics();
+	while (!nh.connected())
+	{
+	    nh.spinOnce();
+	}
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}
@@ -121,6 +135,11 @@ int fixOverflow(long after, long before)
 float ticksToMillimeters(int32_t ticks)
 {
 	return (DIST_PER_REVOLUTION * (float)ticks / TICKS_PER_REVOLUTION);
+}
+
+int32_t millimetersToTicks(float millimeters)
+{
+	return static_cast<int32_t>(millimeters * TICKS_PER_REVOLUTION/DIST_PER_REVOLUTION);
 }
 
 /*

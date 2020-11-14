@@ -11,6 +11,7 @@
 #include <geometry_msgs/Twist.h>
 #include <krabi_msgs/motors.h>
 #include <krabi_msgs/odom_light.h>
+#include <krabi_msgs/motorsParams.h>
 #include <std_msgs/Bool.h>
 #include <ros.h>
 #include <std_msgs/String.h>
@@ -35,10 +36,12 @@ std_msgs::String str_msg;
 float get_orientation_float(long encoder1, long encoder2);
 int fixOverflow(long after, long before);
 float ticksToMillimeters(int32_t ticks);
+int32_t millimetersToTicks(float millimeters);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
 void enable_motor_cb(const std_msgs::Bool& enable);
 void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res);
+void set_motors_param_cb(const krabi_msgs::motorsParamsRequest &req, krabi_msgs::motorsParamsResponse &res);
 
 class MotorBoard
 {
@@ -50,6 +53,7 @@ public:
 	static ros::NodeHandle& getNodeHandle(void);
 	static DCMotor& getDCMotor(void);
 	static void set_odom(float a_x, float a_y, float a_theta);
+
 	void update();
 private:
 	static ros::NodeHandle nh;

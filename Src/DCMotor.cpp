@@ -9,6 +9,10 @@
 
 DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
 	resetMotors();
+	max_speed = SPEED_MAX;
+	max_acceleration = ACCEL_MAX;
+	pid_p = S_KP;
+	pid_i = S_KI;
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		speed_ID[i] = 0;
@@ -37,6 +41,10 @@ void DCMotor::resetMotors() {
 }
 
 DCMotor::DCMotor() {
+	max_speed = SPEED_MAX;
+	max_acceleration = ACCEL_MAX;
+	pid_p = S_KP;
+	pid_i = S_KI;
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		dir[i] = 0;
@@ -146,13 +154,13 @@ void DCMotor::set_speed_order(float lin, float rot) {
 	int32_t rotational_speed_order = rad_to_tick * rot;// = radius when turning on the spot (=half entraxe) / speed in m/s = (250mm/2) * 19172 to convert from rad/s => 2396
 
 	int32_t left_speed_order = linear_speed+rotational_speed_order;
-	left_speed_order = MIN(left_speed_order, SPEED_MAX);
-	left_speed_order = MAX(left_speed_order, -SPEED_MAX);
+	left_speed_order = MIN(left_speed_order, max_speed);
+	left_speed_order = MAX(left_speed_order, -max_speed);
 	speed_order[M_L] = left_speed_order;
 
 	int32_t right_speed_order = linear_speed-rotational_speed_order;
-	right_speed_order = MIN(right_speed_order, SPEED_MAX);
-	right_speed_order = MAX(right_speed_order, -SPEED_MAX);
+	right_speed_order = MIN(right_speed_order, max_speed);
+	right_speed_order = MAX(right_speed_order, -max_speed);
 	speed_order[M_R] = right_speed_order;
 }
 
@@ -160,11 +168,11 @@ void DCMotor::control_ramp_speed(void) {
     //if( stopped ) return;
 
     for(int i = 0; i < NB_MOTORS; i++){
-        if( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] >= ACCEL_MAX) {
-        	speed_command[i] = speed[i][speed_ID[i]]+ACCEL_MAX;
+        if( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] >= max_acceleration) {
+        	speed_command[i] = speed[i][speed_ID[i]]+max_acceleration;
         }
-        else if ( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] <= -ACCEL_MAX ) {
-        	speed_command[i] = speed[i][speed_ID[i]]-ACCEL_MAX;
+        else if ( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] <= -max_acceleration ) {
+        	speed_command[i] = speed[i][speed_ID[i]]-max_acceleration;
         }
         else {
         	speed_command[i] = speed_order[i];
@@ -176,10 +184,31 @@ void DCMotor::control_ramp_speed(void) {
         }
 
         voltage[i] =
-             (S_KP*speed_error[i][speed_error_ID[i]] +
-             S_KI*speed_integ_error[i]);
+             (pid_p*speed_error[i][speed_error_ID[i]] +
+             pid_i*speed_integ_error[i]);
 
         voltage[i] = MIN(voltage[i], DUTYMAX);
         voltage[i] = MAX(voltage[i], -DUTYMAX);
     }
+}
+
+void DCMotor::set_max_speed(int32_t a_max_speed)
+{
+	max_speed = a_max_speed;
+}
+
+void DCMotor::set_max_acceleration(int32_t a_max_acceleration)
+{
+	max_acceleration = a_max_acceleration;
+}
+
+
+void DCMotor::set_pid_p(float a_pid_p)
+{
+	pid_p = a_pid_p;
+}
+
+void DCMotor::set_pid_i(float a_pid_i)
+{
+	pid_i = a_pid_i;
 }

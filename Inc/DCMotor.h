@@ -16,8 +16,7 @@
 #define M_R             1
 #define NB_MOTORS 		2
 
-#define ENC_RESO        1024
-#define HALF_ENC_RESO   512
+#define ENC_RESO        1024 * 4
 
 #define ENC_BUF_SIZE 65536
 #define HALF_ENC_BUF_SIZE 32768
@@ -26,11 +25,9 @@
 #define SPEED_SMPL      10 // nb of sample to perform average
 
 #define SAMPLING_USEC   10000 //microseconds
-#define SAMPLING_PER_SEC 100 // Hz
+#define SAMPLING_PER_SEC 1e6/SAMPLING_USEC // Hz
 
-#define AWINDUP         512 //255
-
-#define SPEED_MAX       2048//2048 // ticks per s = 2tr/s
+#define SPEED_MAX       2048//2048 // ticks per s = 0.5tr/s
 #define ACCEL_MAX       1024//1024 // ticks per s per s
 #define S_KP            0.007//0.07 //0.08
 #define S_KI            0.00015//0.0015 //0.002
@@ -91,6 +88,31 @@ public:
 	 * @brief stop the motors and reset the asserv
 	 */
 	void resetMotors();
+
+	/**
+	 * @brief setter for the max speed (per motor)
+	 * @param a_max_speed the new max speed, in tick/s
+	 */
+	void set_max_speed(int32_t a_max_speed);
+
+	/**
+	 * @brief setter for the max acceleration (per motor)
+	 * @param a_max_acceleration the new max acceleration, in tick/(s^2)
+	 */
+	void set_max_acceleration(int32_t a_max_acceleration);
+
+	/**
+	 * @brief setter pid coefficient proportional
+	 * @param a_pid_p the new p coefficient
+	 */
+	void set_pid_p(float a_pid_p);
+
+	/**
+	 * @brief setter pid coefficient integral
+	 * @param a_pid_p the new i coefficient
+	 */
+	void set_pid_i(float a_pid_i);
+
 private:
 	int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -120,6 +142,15 @@ private:
 	volatile int32_t stopped_timeout;
 
 	int32_t speed_command[NB_MOTORS];
+
+	int32_t max_speed;
+	int32_t max_acceleration;
+	float pid_p;
+	float pid_i;
+#define SPEED_MAX       2048//2048 // ticks per s = 0.5tr/s
+#define ACCEL_MAX       1024//1024 // ticks per s per s
+#define S_KP            0.007//0.07 //0.08
+#define S_KI            0.00015//0.0015 //0.002
 };
 
 
