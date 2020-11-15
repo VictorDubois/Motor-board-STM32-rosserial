@@ -85,11 +85,13 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	//nh.advertise(motors_pub);
 	nh.subscribe(twist_sub);
 	nh.subscribe(enable_sub);
-	nh.negotiateTopics();
+	HAL_Delay(100);
 	while (!nh.connected())
 	{
 	    nh.spinOnce();
+	    HAL_Delay(100);
 	}
+	nh.negotiateTopics();
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}
@@ -176,6 +178,9 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
 }
 
 void MotorBoard::update() {
+	if (!nh.connected()){
+		return;
+	}
 	//int32_t right_speed = motors.get_speed(M_R);
 	//int32_t left_speed = motors.get_speed(M_L);
 
