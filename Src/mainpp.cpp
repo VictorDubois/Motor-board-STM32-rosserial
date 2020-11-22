@@ -100,7 +100,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	while (!nh.connected())
 	{
 	    nh.spinOnce();
-	    HAL_Delay(100);
+	    HAL_Delay(MS_BETWEEN_UPDATES);
 	}
 	nh.negotiateTopics();
 }

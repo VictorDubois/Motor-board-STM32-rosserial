@@ -11,6 +11,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	resetMotors();
 	max_speed = SPEED_MAX;
 	max_acceleration = ACCEL_MAX;
+	set_max_current(0.5f);
 	pid_p = S_KP;
 	pid_i = S_KI;
 	for (int i = 0; i< NB_MOTORS; i++) {
@@ -45,7 +46,7 @@ DCMotor::DCMotor() {
 	max_acceleration = ACCEL_MAX;
 	pid_p = S_KP;
 	pid_i = S_KI;
-	max_current = OVER_CURRENT_THRESHOLD;
+	set_max_current(0.5f);
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		dir[i] = 0;
@@ -95,9 +96,12 @@ void DCMotor::update() {
 			stopped_timeout = 300;
 		}
 
-		accumulated_current[i] = 0.95f * accumulated_current[i] + current[i]; // measure over 20 iterations
+		constexpr uint8_t current_averaging_period = 20;// measure over 20 iterations
+		constexpr float current_averaging_factor = 1.f - (1.f/current_averaging_period);
 
-		if (accumulated_current[i] > max_current) {
+		accumulated_current[i] = current_averaging_factor * accumulated_current[i] + current[i];
+
+		if (accumulated_current[i] > max_current * current_averaging_period) {
 			stopped_timeout = 300;
 		}
 	}
@@ -215,5 +219,5 @@ void DCMotor::set_pid_i(float a_pid_i)
 
 void DCMotor::set_max_current(float a_max_current)
 {
-	max_current = a_max_current;
+	max_current = a_max_current * ONE_AMP;
 }

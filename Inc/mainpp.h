@@ -21,6 +21,10 @@
 #include <MCP3002.h>
 #include "stm32f3xx_hal.h"
 #include "DCMotor.h"
+
+#define UPDATE_FREQ 10
+#define MS_BETWEEN_UPDATES 1000/UPDATE_FREQ
+
 krabi_msgs::encoders encoders_msg;
 krabi_msgs::motors motors_msg;
 krabi_msgs::odom_light odom_light_msg;
