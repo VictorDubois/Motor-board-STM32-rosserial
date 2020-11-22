@@ -13,10 +13,21 @@ ros::ServiceServer<krabi_msgs::motorsParamsRequest, krabi_msgs::motorsParamsResp
 
 void set_motors_param_cb(const krabi_msgs::motorsParamsRequest &req, krabi_msgs::motorsParamsResponse &res)
 {
+	if (req.max_speed != -1) {
 	MotorBoard::getDCMotor().set_max_speed(millimetersToTicks(req.max_speed * 1000));
-	MotorBoard::getDCMotor().set_max_acceleration(millimetersToTicks(req.max_acceleration * 1000));
-	MotorBoard::getDCMotor().set_pid_i(req.PID_I);
-	MotorBoard::getDCMotor().set_pid_p(req.PID_P);
+	}
+	if (req.max_acceleration != -1) {
+		MotorBoard::getDCMotor().set_max_acceleration(millimetersToTicks(req.max_acceleration * 1000));
+	}
+	if (req.PID_I != -1) {
+		MotorBoard::getDCMotor().set_pid_i(req.PID_I);
+	}
+	if (req.PID_P != -1) {
+		MotorBoard::getDCMotor().set_pid_p(req.PID_P);
+	}
+	if (req.max_current != -1) {
+		MotorBoard::getDCMotor().set_max_current(req.max_current);
+	}
 }
 
 void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)

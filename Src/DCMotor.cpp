@@ -45,6 +45,7 @@ DCMotor::DCMotor() {
 	max_acceleration = ACCEL_MAX;
 	pid_p = S_KP;
 	pid_i = S_KI;
+	max_current = OVER_CURRENT_THRESHOLD;
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		dir[i] = 0;
@@ -96,7 +97,7 @@ void DCMotor::update() {
 
 		accumulated_current[i] = 0.95f * accumulated_current[i] + current[i]; // measure over 20 iterations
 
-		if (accumulated_current[i] > OVER_CURRENT_THRESHOLD) {
+		if (accumulated_current[i] > max_current) {
 			stopped_timeout = 300;
 		}
 	}
@@ -202,7 +203,6 @@ void DCMotor::set_max_acceleration(int32_t a_max_acceleration)
 	max_acceleration = a_max_acceleration;
 }
 
-
 void DCMotor::set_pid_p(float a_pid_p)
 {
 	pid_p = a_pid_p;
@@ -211,4 +211,9 @@ void DCMotor::set_pid_p(float a_pid_p)
 void DCMotor::set_pid_i(float a_pid_i)
 {
 	pid_i = a_pid_i;
+}
+
+void DCMotor::set_max_current(float a_max_current)
+{
+	max_current = a_max_current;
 }
