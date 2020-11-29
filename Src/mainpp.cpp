@@ -6,6 +6,7 @@
  */
 #include <mainpp.h>
 #include <constants.h>
+#include <tf/tf.h>
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
 ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_cb);
@@ -87,10 +88,10 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motors = DCMotor(&motorsHardware, &currentReader);
 
 	nh.initNode();
-	//nh.advertise(odom_pub);
+	nh.advertise(odom_pub);
 	nh.advertiseService(set_odom_srv);
 	nh.advertiseService(set_motors_param_srv);
-	nh.advertise(odom_light_pub);
+	//nh.advertise(odom_light_pub);
 	//nh.advertise(chatter);
 	//nh.advertise(encoders_pub);
 	//nh.advertise(motors_pub);
@@ -192,39 +193,6 @@ void MotorBoard::update() {
 	if (!nh.connected()){
 		return;
 	}
-	//int32_t right_speed = motors.get_speed(M_R);
-	//int32_t left_speed = motors.get_speed(M_L);
-
-	/*odom_msg.header.frame_id = "toto";
-	odom_msg.header.stamp.nsec = 0;
-	odom_msg.header.stamp.sec = 0;
-	odom_msg.header.seq = 0;
-	odom_msg.child_frame_id = "toto";
-
-	for (unsigned int i = 0; i < (sizeof(odom_msg.pose.covariance)/sizeof(*(odom_msg.pose.covariance))); i++){
-		odom_msg.pose.covariance[i] = 0;
-	}
-
-	odom_msg.pose.pose.position.x = 0;
-	odom_msg.pose.pose.position.y = 0;
-	odom_msg.pose.pose.position.z = 0;
-
-	odom_msg.pose.pose.orientation.x = 0;
-	odom_msg.pose.pose.orientation.y = 0;
-	odom_msg.pose.pose.orientation.z = 0;
-
-	for (unsigned int i = 0; i < (sizeof(odom_msg.twist.covariance)/sizeof(*(odom_msg.twist.covariance))); i++){
-		odom_msg.twist.covariance[i] = 0;
-	}
-
-	odom_msg.twist.twist.linear.x = 0;//(left_speed+right_speed)/2;
-	odom_msg.twist.twist.linear.y = 0;
-	odom_msg.twist.twist.linear.z = 0;
-
-	odom_msg.twist.twist.angular.x = 0;
-	odom_msg.twist.twist.angular.y = 0;
-	odom_msg.twist.twist.angular.z = 0;//(left_speed-right_speed)/2;
-	odom_pub.publish(&odom_msg);*/
 
 	int32_t encoder_left = motors.get_encoder_ticks(M_L);
 	int32_t encoder_right = motors.get_encoder_ticks(M_R);
@@ -240,7 +208,47 @@ void MotorBoard::update() {
 	X += linear_dist * cos(current_theta_rad);
 	Y += linear_dist * sin(current_theta_rad);
 
-	odom_light_msg.header.frame_id = "odom_light";
+	//int32_t right_speed = motors.get_speed(M_R);
+	//int32_t left_speed = motors.get_speed(M_L);
+
+	odom_msg.header.frame_id = "odom";
+	//odom_msg.header.stamp.nsec = 0;
+	//odom_msg.header.stamp.sec = 0;
+	//odom_msg.header.seq = 0;
+	//odom_msg.header.stamp = ros::Time::now();
+	odom_msg.child_frame_id = "base_link";
+
+	for (unsigned int i = 0; i < (sizeof(odom_msg.pose.covariance)/sizeof(*(odom_msg.pose.covariance))); i++){
+		odom_msg.pose.covariance[i] = 0;
+	}
+
+	odom_msg.pose.pose.position.x = X;
+	odom_msg.pose.pose.position.y = Y;
+	odom_msg.pose.pose.position.z = 0;
+
+	geometry_msgs::Quaternion odom_quat = tf::createQuaternionFromYaw(current_theta_rad);
+	odom_msg.pose.pose.orientation = odom_quat;
+
+	//odom_msg.pose.pose.orientation.x = 0;
+	//odom_msg.pose.pose.orientation.y = 0;
+	//odom_msg.pose.pose.orientation.z = current_theta_rad;
+
+	for (unsigned int i = 0; i < (sizeof(odom_msg.twist.covariance)/sizeof(*(odom_msg.twist.covariance))); i++){
+		odom_msg.twist.covariance[i] = 0;
+	}
+
+	odom_msg.twist.twist.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+	odom_msg.twist.twist.linear.y = 0;
+	odom_msg.twist.twist.linear.z = 0;
+
+	odom_msg.twist.twist.angular.x = 0;
+	odom_msg.twist.twist.angular.y = 0;
+	odom_msg.twist.twist.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f;
+	odom_pub.publish(&odom_msg);
+
+
+
+	/*odom_light_msg.header.frame_id = "odom_light";
 	odom_light_msg.pose.position.x = X;
 	odom_light_msg.pose.position.y = Y;
 	odom_light_msg.pose.position.z = 0;
@@ -259,7 +267,7 @@ void MotorBoard::update() {
 	odom_light_msg.current_motor_left = motors.get_accumulated_current(0);
 	odom_light_msg.current_motor_right = motors.get_accumulated_current(1);
 
-	odom_light_pub.publish(&odom_light_msg);
+	odom_light_pub.publish(&odom_light_msg);*/
 
 	encoders_msg.encoder_left = encoder_left;//get_speed(M_L);
 	encoders_msg.encoder_right = encoder_right;//get_speed(M_R);
