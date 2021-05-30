@@ -25,17 +25,21 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	}
 }
 
+void DCMotor::resetMotor(int motor_id) {
+	dir[motor_id] = 0;
+	speed_error_ID[motor_id] = 0;
+	speed_integ_error[motor_id] = 0;
+	voltage[motor_id] = 0;
+	speed_command[motor_id] = 0;
+	speed_order[motor_id] = 0;
+	for (int j = 0; j < SMPL; j++) {
+		speed_error[motor_id][j] = 0;
+	}
+}
+
 void DCMotor::resetMotors() {
 	for (int i = 0; i< NB_MOTORS; i++) {
-		dir[i] = 0;
-		speed_error_ID[i] = 0;
-		speed_integ_error[i] = 0;
-		voltage[i] = 0;
-		speed_command[i] = 0;
-		speed_order[i] = 0;
-		for (int j = 0; j < SMPL; j++) {
-			speed_error[i][j] = 0;
-		}
+		resetMotor(i);
 	}
 
 	hardware->setPWM(0, 0);
@@ -47,6 +51,7 @@ DCMotor::DCMotor() {
 	pid_p = S_KP;
 	pid_i = S_KI;
 	set_max_current(0.5f);
+	stopped_timeout = 0;
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		dir[i] = 0;
@@ -58,6 +63,7 @@ DCMotor::DCMotor() {
 		speed_order[i] = 0;
 		accumulated_current[i] = 0;
 		current[i] = 0;
+		stopped_timeouts[i] = 0;
 		for (int j = 0; j < SMPL; j++) {
 			speed[i][j] = 0;
 			speed_error[i][j] = 0;
@@ -75,6 +81,12 @@ void DCMotor::update() {
 		resetMotors();
 	}
 	else {
+		for(int i = 0; i < NB_MOTORS; i++){
+			if (stopped_timeouts[i] > 0){
+				stopped_timeouts[i]--;
+				resetMotor(i);
+			}
+		}
 		control_ramp_speed();
 
 		//hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv
@@ -103,6 +115,10 @@ void DCMotor::update() {
 
 		if (accumulated_current[i] > max_current * current_averaging_period) {
 			stopped_timeout = 300;
+		}
+
+		if (accumulated_current[i] > max_currents[i] * current_averaging_period) {
+			stopped_timeouts[i] = 100;
 		}
 	}
 }
@@ -220,4 +236,10 @@ void DCMotor::set_pid_i(float a_pid_i)
 void DCMotor::set_max_current(float a_max_current)
 {
 	max_current = a_max_current * ONE_AMP;
+}
+
+void DCMotor::set_max_current(float a_max_current_left, float a_max_current_right)
+{
+	max_currents[M_L] = a_max_current_left;
+	max_currents[M_R] = a_max_current_right;
 }

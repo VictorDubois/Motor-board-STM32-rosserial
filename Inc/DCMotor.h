@@ -90,6 +90,11 @@ public:
 	void resetMotors();
 
 	/**
+	 * @brief stop the motor and reset the asserv
+	 */
+	void resetMotor(int motor_id);
+
+	/**
 	 * @brief setter for the max speed (per motor)
 	 * @param a_max_speed the new max speed, in tick/s
 	 */
@@ -119,6 +124,13 @@ public:
 	 */
 	void set_max_current(float a_max_current);
 
+	/**
+	 * @brief setter for the overcurrent per motor. Used to be able to stop one motor only
+	 * @param a_max_current_left the overcurrent threshold for the left motor
+	 * @param a_max_current_right the overcurrent threshold for the right motor
+	 */
+	void set_max_current(float a_max_current_left, float a_max_current_right);
+
 private:
 	int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -146,6 +158,7 @@ private:
 	int32_t current[NB_MOTORS];
 
 	volatile int32_t stopped_timeout;
+	volatile int32_t stopped_timeouts[NB_MOTORS];
 
 	int32_t speed_command[NB_MOTORS];
 
@@ -154,6 +167,8 @@ private:
 	float pid_p;
 	float pid_i;
 	float max_current;
+
+	float max_currents[NB_MOTORS];
 };
 
 

@@ -39,6 +39,10 @@ void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomRespo
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
+
+	if(twist.linear.z > 0) {
+		MotorBoard::getDCMotor().set_max_current(twist.linear.z, twist.linear.z);
+	}
 }
 
 void enable_motor_cb(const std_msgs::Bool& enable)
