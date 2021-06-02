@@ -8,41 +8,24 @@
 #include <constants.h>
 #include <tf/tf.h>
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
+ros::Subscriber<krabi_msgs::motors_parameters> parameters_sub("motors_parameters", parameters_cb);
 ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
-ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_cb);
-ros::ServiceServer<krabi_msgs::motorsParamsRequest, krabi_msgs::motorsParamsResponse> set_motors_param_srv("set_motors_param", set_motors_param_cb);
 
-void set_motors_param_cb(const krabi_msgs::motorsParamsRequest &req, krabi_msgs::motorsParamsResponse &res)
-{
-	if (req.max_speed != -1) {
-	MotorBoard::getDCMotor().set_max_speed(millimetersToTicks(req.max_speed * 1000));
-	}
-	if (req.max_acceleration != -1) {
-		MotorBoard::getDCMotor().set_max_acceleration(millimetersToTicks(req.max_acceleration * 1000));
-	}
-	if (req.PID_I != -1) {
-		MotorBoard::getDCMotor().set_pid_i(req.PID_I);
-	}
-	if (req.PID_P != -1) {
-		MotorBoard::getDCMotor().set_pid_p(req.PID_P);
-	}
-	if (req.max_current != -1) {
-		MotorBoard::getDCMotor().set_max_current(req.max_current);
-	}
-}
 
 void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
 {
 	MotorBoard::set_odom(req.x, req.y, req.theta);
 }
 
+void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
+{
+	MotorBoard::getDCMotor().set_max_current(a_parameters.max_current);
+	MotorBoard::getDCMotor().set_max_current(a_parameters.max_current_left, a_parameters.max_current_right);
+}
+
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
-
-	if(twist.linear.z > 0) {
-		MotorBoard::getDCMotor().set_max_current(twist.linear.z, twist.linear.z);
-	}
 }
 
 void enable_motor_cb(const std_msgs::Bool& enable)
@@ -93,13 +76,12 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 
 	nh.initNode();
 	nh.advertise(odom_pub);
-	nh.advertiseService(set_odom_srv);
-	nh.advertiseService(set_motors_param_srv);
 	//nh.advertise(odom_light_pub);
 	//nh.advertise(chatter);
 	//nh.advertise(encoders_pub);
 	//nh.advertise(motors_pub);
 	nh.subscribe(twist_sub);
+	nh.subscribe(parameters_sub);
 	nh.subscribe(enable_sub);
 	HAL_Delay(100);
 	while (!nh.connected())

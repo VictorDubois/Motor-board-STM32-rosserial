@@ -11,7 +11,7 @@
 #include <geometry_msgs/Twist.h>
 #include <krabi_msgs/motors.h>
 #include <krabi_msgs/odom_light.h>
-#include <krabi_msgs/motorsParams.h>
+#include <krabi_msgs/motors_parameters.h>
 #include <std_msgs/Bool.h>
 #include <ros.h>
 #include <std_msgs/String.h>
@@ -43,9 +43,8 @@ float ticksToMillimeters(int32_t ticks);
 int32_t millimetersToTicks(float millimeters);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
+void parameters_cb(const krabi_msgs::motors_parameters& parameters);
 void enable_motor_cb(const std_msgs::Bool& enable);
-void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res);
-void set_motors_param_cb(const krabi_msgs::motorsParamsRequest &req, krabi_msgs::motorsParamsResponse &res);
 
 class MotorBoard
 {
