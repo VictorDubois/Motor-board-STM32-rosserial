@@ -57,28 +57,25 @@ DCMotor MotorBoard::motors;
 MCP3002 MotorBoard::currentReader;
 volatile long long MotorBoard::message_counter = 0;
 
-float MotorBoard::X = 0;
-float MotorBoard::Y = 0;
-float MotorBoard::theta_offset = 0;
-
 void MotorBoard::set_odom(float a_x, float a_y, float a_theta)
 {
-	X = a_x;
+	/*X = a_x;
 	Y = a_y;
 	int32_t encoder_left = motors.get_encoder_ticks(M_L);
 	int32_t encoder_right = motors.get_encoder_ticks(M_R);
 
 	float current_theta = get_orientation_float(encoder_left, encoder_right);
-	theta_offset = a_theta - current_theta;
+	theta_offset = a_theta - current_theta;*/
 }
 
 MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motorsHardware = DCMotorHardware(GPIOA, GPIO_PIN_6, GPIOA, GPIO_PIN_5, TIM1, TIM2, a_motorTimHandler, TIM_CHANNEL_4, a_motorTimHandler, TIM_CHANNEL_1);
 	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
 	motors = DCMotor(&motorsHardware, &currentReader);
+	odometry = new Odometry();
 
-	motors.set_max_acceleration(millimetersToTicks(5000));//mm/s/s
-	motors.set_max_speed(millimetersToTicks(500));//mm/s
+	motors.set_max_acceleration(Odometry::millimetersToTicks(5000));//mm/s/s
+	motors.set_max_speed(Odometry::millimetersToTicks(500));//mm/s
 
 	nh.initNode();
 	nh.advertise(odom_pub);
@@ -109,87 +106,13 @@ DCMotor& MotorBoard::getDCMotor(void) {
 	return motors;
 }
 
-/*
-    Return the Robot's orientation, in degrees, with respect to the last encoder reset.
-*/
-float get_orientation_float(long encoder1, long encoder2)
-{
-    int absolute_orientation = fmod((encoder2 - encoder1) / TICKS_PER_DEG, 360);
-
-    if (absolute_orientation >= 0)
-        return (absolute_orientation);
-    else
-        return (360.f + absolute_orientation); // reminder: abs_ori is < 0 here
-}
-
-int fixOverflow(long after, long before)
-{
-    if (after - before > TICKS_half_OVERFLOW)
-    {
-        // printf("before (%ld) - after (%ld) > TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
-        // before, after, TICKS_half_OVERFLOW, after - before - TICKS_OVERFLOW);
-        return after - before - TICKS_OVERFLOW;
-    }
-    if (after - before < -TICKS_half_OVERFLOW)
-    {
-        // printf("after (%ld) - before (%ld) < -TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
-        // after, before, -TICKS_half_OVERFLOW, after - before + TICKS_OVERFLOW);
-        return after - before + TICKS_OVERFLOW;
-    }
-    return after - before;
-}
-
-/*
-        Given current value of both encoders
-        return the linear dist by approximating it as the average of both wheels' linear distances.
-        Static variables are used to keep last value of encoders.
-*/
-float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
-{
-    float dist1, dist2, dist;
-    int diff_encoder1, diff_encoder2;
-
-    // Compute difference in nb of ticks between last measurements and now
-    diff_encoder1 = fixOverflow(encoder1, last_encoder_left);
-    diff_encoder2 = fixOverflow(encoder2, last_encoder_right);
-
-    // Compute each wheel's dist and approximate linear dist as their average
-    dist1 = ticksToMillimeters(diff_encoder1);
-    dist2 = ticksToMillimeters(diff_encoder2);
-    dist = (dist1 + dist2) / 2.0f;
-
-    if (fabsf(dist) > 500.)
-    {
-        //printf("\n/!\\ HIGH SPEED DETECTED: %.2f /!\\\n\n", dist);
-        // exit(4);
-    }
-
-    // Update static variables' values (current encoder values become old ones)
-    last_encoder_left = encoder1;
-    last_encoder_right = encoder2;
-
-    // Return the computed linear dist
-    return dist / 1000.f; // convert to meters
-}
 
 void MotorBoard::update() {
 	if (!nh.connected()){
 		return;
 	}
 
-	int32_t encoder_left = motors.get_encoder_ticks(M_L);
-	int32_t encoder_right = motors.get_encoder_ticks(M_R);
-	int32_t right_speed = motors.get_speed(M_R);
-	int32_t left_speed = motors.get_speed(M_L);
-
-	float linear_dist = compute_linear_dist(encoder_left, encoder_right);
-	float current_theta = get_orientation_float(encoder_left, encoder_right);
-	current_theta += theta_offset;
-
-	float current_theta_rad = current_theta * M_PI / 180.f;
-
-	X += linear_dist * cos(current_theta_rad);
-	Y += linear_dist * sin(current_theta_rad);
+	odometry->update();
 
 	//int32_t right_speed = motors.get_speed(M_R);
 	//int32_t left_speed = motors.get_speed(M_L);
@@ -203,11 +126,11 @@ void MotorBoard::update() {
 		odom_msg.pose.covariance[i] = 0;
 	}
 
-	odom_msg.pose.pose.position.x = X;
-	odom_msg.pose.pose.position.y = Y;
+	odom_msg.pose.pose.position.x = odometry->getX();
+	odom_msg.pose.pose.position.y = odometry->getY();;
 	odom_msg.pose.pose.position.z = 0;
 
-	geometry_msgs::Quaternion odom_quat = tf::createQuaternionFromYaw(current_theta_rad);
+	geometry_msgs::Quaternion odom_quat = tf::createQuaternionFromYaw(odometry->getTheta());
 	odom_msg.pose.pose.orientation = odom_quat;
 
 	//odom_msg.pose.pose.orientation.x = 0;
@@ -218,13 +141,13 @@ void MotorBoard::update() {
 		odom_msg.twist.covariance[i] = 0;
 	}
 
-	odom_msg.twist.twist.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+	odom_msg.twist.twist.linear.x = odometry->getLinearSpeed();
 	odom_msg.twist.twist.linear.y = 0;
 	odom_msg.twist.twist.linear.z = 0;
 
 	odom_msg.twist.twist.angular.x = 0;
 	odom_msg.twist.twist.angular.y = 0;
-	odom_msg.twist.twist.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f;
+	odom_msg.twist.twist.angular.z = odometry->getAngularSpeed();
 	odom_pub.publish(&odom_msg);
 
 
@@ -250,13 +173,6 @@ void MotorBoard::update() {
 
 	odom_light_pub.publish(&odom_light_msg);*/
 
-	encoders_msg.encoder_left = encoder_left;//get_speed(M_L);
-	encoders_msg.encoder_right = encoder_right;//get_speed(M_R);
-//	encoders_msg.encoder_left = motors.get_speed(M_L);
-//	encoders_msg.encoder_right = motors.get_speed(M_R);
-	//encoders_pub.publish(&encoders_msg);
-
-	motors_msg.encoders = encoders_msg;
 	motors_msg.current_left = motors.get_current(0);
 	motors_msg.current_right = motors.get_current(1);
 

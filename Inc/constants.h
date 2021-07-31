@@ -16,10 +16,5 @@
 #define TICKS_OVERFLOW 65536
 #define TICKS_half_OVERFLOW TICKS_OVERFLOW/2
 
-float ticksToMillimeters(int32_t ticks);
-
-int32_t millimetersToTicks(float millimeters);
-
-
 #endif
 

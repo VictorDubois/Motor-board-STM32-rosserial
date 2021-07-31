@@ -7,6 +7,7 @@
 
 #include "DCMotor.h"
 #include "constants.h"
+#include "odometry.h"
 
 DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
 	resetMotors();
@@ -235,9 +236,9 @@ void DCMotor::limitLinearSpeedCmdByGoal()
 
     float new_speed_order = 0; // m/s
 
-    float m_linear_speed = ticksToMillimeters((speed[M_L] + speed[M_R])/2)/1000.f;// m/s
+    float m_linear_speed = Odometry::ticksToMillimeters((speed[M_L] + speed[M_R])/2)/1000.f;// m/s
     float desired_final_speed = 0; // m/s To get from Raspi
-    float speed_order = ticksToMillimeters((speed_command[M_L] + speed_command[M_R])/2)/1000.f;// m/s
+    float speed_order = Odometry::ticksToMillimeters((speed_command[M_L] + speed_command[M_R])/2)/1000.f;// m/s
     float m_distance_to_goal = 0; //m. To get from Raspi
 
 

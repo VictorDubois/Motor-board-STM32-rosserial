@@ -21,11 +21,11 @@
 #include <MCP3002.h>
 #include "stm32f3xx_hal.h"
 #include "DCMotor.h"
+#include "odometry.h"
 
 #define UPDATE_FREQ 10
 #define MS_BETWEEN_UPDATES 1000/UPDATE_FREQ
 
-krabi_msgs::encoders encoders_msg;
 krabi_msgs::motors motors_msg;
 krabi_msgs::motors_parameters asserv_msg;
 //krabi_msgs::odom_light odom_light_msg;
@@ -63,13 +63,8 @@ private:
 	static DCMotorHardware motorsHardware;
 	static DCMotor motors;
 	static MCP3002 currentReader;
-	volatile long last_encoder_left = 0;
-	volatile long last_encoder_right = 0;
-	float compute_linear_dist(const long encoder_left, const long encoder_right);
-	static float X;
-	static float Y;
-	static float theta_offset;
-	volatile static long long message_counter;
+	Odometry* odometry;
+	static volatile long long int message_counter;
 };
 
 #ifdef __cplusplus
