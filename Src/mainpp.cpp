@@ -47,8 +47,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	if(htim->Instance == TIM15) {
-		MotorBoard::getDCMotor().update();
-
+		MotorBoard::getDCMotor().update();// should be called every MotorBoard::UPDATE_RATE
 	}
 }
 
@@ -138,17 +137,6 @@ int fixOverflow(long after, long before)
         return after - before + TICKS_OVERFLOW;
     }
     return after - before;
-}
-
-constexpr float ticksToMillimeters(int32_t ticks)
-{
-	return (DIST_PER_REVOLUTION * (float)ticks / TICKS_PER_REVOLUTION);
-}
-
-
-constexpr int32_t millimetersToTicks(float millimeters)
-{
-	return static_cast<int32_t>((millimeters * TICKS_PER_REVOLUTION)/DIST_PER_REVOLUTION);
 }
 
 /*

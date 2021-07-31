@@ -135,6 +135,9 @@ public:
 	 */
 	void set_max_current(float a_max_current_left, float a_max_current_right);
 
+	void limitLinearSpeedCmdByGoal();
+
+
 private:
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -171,6 +174,8 @@ private:
 	float max_current;
 
 	float max_currents[NB_MOTORS];
+
+	int UPDATE_RATE = 100;//Hz
 };
 
 

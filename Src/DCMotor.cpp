@@ -6,6 +6,7 @@
  */
 
 #include "DCMotor.h"
+#include "constants.h"
 
 DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
 	resetMotors();
@@ -225,4 +226,58 @@ void DCMotor::set_max_current(float a_max_current_left, float a_max_current_righ
 {
 	max_currents[M_L] = a_max_current_left * ONE_AMP;
 	max_currents[M_R] = a_max_current_right * ONE_AMP;
+}
+
+void DCMotor::limitLinearSpeedCmdByGoal()
+{
+    float max_acceleration = 0.15f; // m*s-2
+    float max_deceleration = 0.15f; // m*s-2
+
+    float new_speed_order = 0; // m/s
+
+    float m_linear_speed = ticksToMillimeters((speed[M_L] + speed[M_R])/2)/1000.f;// m/s
+    float desired_final_speed = 0; // m/s To get from Raspi
+    float speed_order = ticksToMillimeters((speed_command[M_L] + speed_command[M_R])/2)/1000.f;// m/s
+    float m_distance_to_goal = 0; //m. To get from Raspi
+
+
+    float time_to_stop = (m_linear_speed - desired_final_speed) / max_deceleration;
+    time_to_stop = MAX(0.f, time_to_stop);
+    //ROS_INFO_STREAM("time to stop = " << time_to_stop << "s, ");
+
+    float distance_to_stop
+      = time_to_stop * (m_linear_speed - desired_final_speed) / 2.;
+    //ROS_INFO_STREAM(", distance to stop = " << distance_to_stop << "m, ");
+
+    // Compute extra time if accelerating
+    float average_extra_speed =
+      m_linear_speed + (max_acceleration / 2. + max_deceleration / 2.) / float(UPDATE_RATE);
+    float extra_distance = 2 * average_extra_speed / float(UPDATE_RATE);
+
+    if (m_distance_to_goal < distance_to_stop)
+    {
+        //ROS_INFO_STREAM("decelerate");
+        new_speed_order = m_linear_speed - max_deceleration / float(UPDATE_RATE);
+    }
+    else if (m_distance_to_goal < m_linear_speed / float(UPDATE_RATE))
+    {
+        //ROS_INFO_STREAM("EMERGENCY BRAKE");
+        new_speed_order = 0;
+    }
+    else if (m_distance_to_goal > distance_to_stop + extra_distance)
+    {
+        //ROS_INFO_STREAM("accelerate");
+        new_speed_order = m_linear_speed + max_acceleration / float(UPDATE_RATE);
+    }
+    else
+    {
+        //ROS_INFO_STREAM("cruise speed");
+        new_speed_order = m_linear_speed;
+    }
+    new_speed_order
+      = MAX(new_speed_order, -speed_order);
+    new_speed_order
+      = MIN(new_speed_order, speed_order);
+    // m_linear_speed_cmd = MIN(m_default_linear_speed, new_speed_order);
+    //ROS_INFO_STREAM("new speed: " << new_speed_order << " => " << m_linear_speed_cmd << std::endl);
 }

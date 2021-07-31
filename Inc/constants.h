@@ -1,6 +1,7 @@
 //add constant from libmd25 use in main
 #ifndef _CONSTANTS_H_
 #define _CONSTANTS_H_
+#include <stdint.h>
 
 /*****************************
  *         PARAMETERS        *
@@ -14,5 +15,11 @@
 #define TICKS_PER_DEG 89.00//89.06 //4.86          // Nb of diff tick (enc1 - enc2) it takes to rotate 1 deg (old value: 4.7)
 #define TICKS_OVERFLOW 65536
 #define TICKS_half_OVERFLOW TICKS_OVERFLOW/2
+
+float ticksToMillimeters(int32_t ticks);
+
+int32_t millimetersToTicks(float millimeters);
+
+
 #endif
 
