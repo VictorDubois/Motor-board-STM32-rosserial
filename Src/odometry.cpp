@@ -8,6 +8,28 @@
 #include "odometry.h"
 #include "constants.h"
 #include "math.h"
+#include "DCMotor.h"
+
+Odometry::Odometry():
+	last_encoder_left(0),
+	last_encoder_right(0),
+	X(0),
+	Y(0),
+	theta_offset(0),
+	current_theta(0),
+	m_linear_speed(0),
+	m_angular_speed(0)
+{
+}
+
+Odometry::~Odometry()
+{
+}
+
+void Odometry::setDCMotor(DCMotor* a_motors)
+{
+	motors = a_motors;
+}
 
 /*
 *    Return the Robot's orientation, in degrees, with respect to the last encoder reset.

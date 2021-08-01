@@ -7,8 +7,10 @@
 #include <mainpp.h>
 #include <constants.h>
 #include <tf/tf.h>
+
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 ros::Subscriber<krabi_msgs::motors_parameters> parameters_sub("motors_parameters", parameters_cb);
+ros::Subscriber<krabi_msgs::motors_distance_asserv> distance_asserv_sub("motors_distance_asserv", distance_asserv_cb);
 ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
 
 
@@ -28,6 +30,14 @@ void cmd_vel_cb(const geometry_msgs::Twist& twist)
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
 	asserv_msg.max_current_left = twist.linear.x;
 
+}
+
+void distance_asserv_cb(const krabi_msgs::motors_distance_asserv& distance_asserv_info)
+{
+	MotorBoard::getDCMotor().set_distance_asserv_params(distance_asserv_info.use_distance_asserv,
+			distance_asserv_info.goal_pose.pose.position.x,
+			distance_asserv_info.goal_pose.pose.position.y,
+			distance_asserv_info.max_speed_at_arrival);
 }
 
 void enable_motor_cb(const std_msgs::Bool& enable)
@@ -73,6 +83,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
 	motors = DCMotor(&motorsHardware, &currentReader);
 	odometry = new Odometry();
+	odometry->setDCMotor(&motors);
 
 	motors.set_max_acceleration(Odometry::millimetersToTicks(5000));//mm/s/s
 	motors.set_max_speed(Odometry::millimetersToTicks(500));//mm/s

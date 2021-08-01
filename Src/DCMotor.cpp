@@ -8,6 +8,7 @@
 #include "DCMotor.h"
 #include "constants.h"
 #include "odometry.h"
+#include <math.h>
 
 DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
 	resetMotors();
@@ -26,6 +27,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 }
 
 void DCMotor::resetMotor(int motor_id) {
+	use_distance_asserv = false;
 	dir[motor_id] = 0;
 	speed_integ_error[motor_id] = 0;
 	voltage[motor_id] = 0;
@@ -165,6 +167,8 @@ void DCMotor::set_speed_order(float lin, float rot) {
 void DCMotor::control_ramp_speed(void) {
     //if( stopped ) return;
 
+	limitLinearSpeedCmdByGoal();
+
     for(int i = 0; i < NB_MOTORS; i++){
         if( (int32_t)(speed_order[i]) - speed[i] >= max_speed_delta) {
         	speed_command[i] = speed[i]+max_speed_delta;
@@ -173,7 +177,7 @@ void DCMotor::control_ramp_speed(void) {
         	speed_command[i] = speed[i]-max_speed_delta;
         }
         else {
-        	speed_command[i] = speed_order[i];
+        	speed_command[i] = speed_order_limited[i];
         }
 
         speed_error[i] = speed_command[i] - speed[i];
@@ -229,18 +233,39 @@ void DCMotor::set_max_current(float a_max_current_left, float a_max_current_righ
 	max_currents[M_R] = a_max_current_right * ONE_AMP;
 }
 
+void DCMotor::set_distance_asserv_params(bool a_use_distance_asserv, float a_goal_X, float a_goal_Y, float a_max_speed_at_arrival)
+{
+	use_distance_asserv = a_use_distance_asserv;
+	goal_X = a_goal_X;
+	goal_Y = a_goal_Y;
+	max_speed_at_arrival = a_max_speed_at_arrival;
+}
+
 void DCMotor::limitLinearSpeedCmdByGoal()
 {
+	for(int ii = 0; ii< NB_MOTORS; ii++)
+	{
+		speed_order_limited[ii] = speed_order[ii];
+	}
+
+	if (odometry == nullptr || !use_distance_asserv)
+	{
+		return;
+	}
+
     float max_acceleration = 0.15f; // m*s-2
     float max_deceleration = 0.15f; // m*s-2
 
     float new_speed_order = 0; // m/s
 
-    float m_linear_speed = Odometry::ticksToMillimeters((speed[M_L] + speed[M_R])/2)/1000.f;// m/s
-    float desired_final_speed = 0; // m/s To get from Raspi
-    float speed_order = Odometry::ticksToMillimeters((speed_command[M_L] + speed_command[M_R])/2)/1000.f;// m/s
-    float m_distance_to_goal = 0; //m. To get from Raspi
+    odometry->update();
 
+    float m_linear_speed = odometry->getLinearSpeed();// m/s
+    float desired_final_speed = max_speed_at_arrival; // m/s
+    //float speed_order = Odometry::ticksToMillimeters((speed_command[M_L] + speed_command[M_R])/2)/1000.f;// m/s
+
+    sqrt((goal_X - odometry->getX()) * (goal_X - odometry->getX()) + (goal_Y - odometry->getY()) * (goal_Y - odometry->getY()));
+    float m_distance_to_goal = 0; //m
 
     float time_to_stop = (m_linear_speed - desired_final_speed) / max_deceleration;
     time_to_stop = MAX(0.f, time_to_stop);
@@ -275,10 +300,10 @@ void DCMotor::limitLinearSpeedCmdByGoal()
         //ROS_INFO_STREAM("cruise speed");
         new_speed_order = m_linear_speed;
     }
-    new_speed_order
-      = MAX(new_speed_order, -speed_order);
-    new_speed_order
-      = MIN(new_speed_order, speed_order);
-    // m_linear_speed_cmd = MIN(m_default_linear_speed, new_speed_order);
     //ROS_INFO_STREAM("new speed: " << new_speed_order << " => " << m_linear_speed_cmd << std::endl);
+
+    speed_order_limited[M_L] = MAX(new_speed_order, -speed_order[M_L]);
+    speed_order_limited[M_L] = MIN(new_speed_order, speed_order[M_L]);
+    speed_order_limited[M_R] = MAX(new_speed_order, -speed_order[M_R]);
+    speed_order_limited[M_R] = MIN(new_speed_order, speed_order[M_R]);
 }

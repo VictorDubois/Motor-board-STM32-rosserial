@@ -37,6 +37,8 @@
 #define M_PI 3.14159265359
 #endif
 
+class Odometry;
+
 class DCMotor
 {
 
@@ -137,11 +139,13 @@ public:
 
 	void limitLinearSpeedCmdByGoal();
 
+	void set_distance_asserv_params(bool use_distance_asserv, float goal_X, float goal_Y, float max_speed_at_arrival);
 
 private:
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
 	MCP3002* current_reader;
+	Odometry* odometry;
 
 	volatile int32_t last_position[NB_MOTORS];
 
@@ -176,7 +180,13 @@ private:
 	float max_currents[NB_MOTORS];
 
 	int UPDATE_RATE = 100;//Hz
-};
 
+	//distance asserv
+	bool use_distance_asserv;
+	float goal_X;
+	float goal_Y;
+	float max_speed_at_arrival;
+	int32_t speed_order_limited[NB_MOTORS];
+};
 
 #endif /* DCMOTOR_H_ */

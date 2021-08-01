@@ -7,11 +7,16 @@
 
 #ifndef ODOMETRY_H_
 #define ODOMETRY_H_
-#include "DCMotor.h"
+
+#include <stdint.h>
+
+class DCMotor;
 
 class Odometry
 {
 public:
+	Odometry();
+	~Odometry();
 	static float ticksToMillimeters(int32_t ticks);
 	static int32_t millimetersToTicks(float millimeters);
 
@@ -21,6 +26,7 @@ public:
 	float getTheta(){return current_theta;};
 	float getLinearSpeed(){return m_linear_speed;};
 	float getAngularSpeed(){return m_angular_speed;};
+	void setDCMotor(DCMotor* motors);
 
 private:
 	float compute_linear_dist(const long encoder_left, const long encoder_right);

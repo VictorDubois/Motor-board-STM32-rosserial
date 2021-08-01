@@ -12,6 +12,7 @@
 #include <krabi_msgs/motors.h>
 #include <krabi_msgs/odom_light.h>
 #include <krabi_msgs/motors_parameters.h>
+#include <krabi_msgs/motors_distance_asserv.h>
 #include <std_msgs/Bool.h>
 #include <ros.h>
 #include <std_msgs/String.h>
@@ -45,6 +46,7 @@ int fixOverflow(long after, long before);
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
 void parameters_cb(const krabi_msgs::motors_parameters& parameters);
 void enable_motor_cb(const std_msgs::Bool& enable);
+void distance_asserv_cb(const krabi_msgs::motors_distance_asserv& distance_asserv_info);
 
 class MotorBoard
 {
