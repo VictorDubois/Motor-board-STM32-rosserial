@@ -72,13 +72,13 @@ DCMotor::~DCMotor() {}
 void DCMotor::update() {
 	get_speed();
 
-	if (stopped_timeout > 0) {
+	if (stopped_timeout > 0 && stopped_timeout < 10000) {
 		stopped_timeout--;
 		resetMotors();
 	}
 	else {
 		for(int i = 0; i < NB_MOTORS; i++){
-			if (stopped_timeouts[i] > 0){
+			if (stopped_timeouts[i] > 0&& stopped_timeouts[i] < 10000){
 				stopped_timeouts[i]--;
 				resetMotor(i);
 			}
@@ -253,57 +253,58 @@ void DCMotor::limitLinearSpeedCmdByGoal()
 		return;
 	}
 
-    float max_acceleration = 0.15f; // m*s-2
-    float max_deceleration = 0.15f; // m*s-2
+    float max_acceleration = 10*0.15f; // m*s-2
+    float max_deceleration = 10*0.15f; // m*s-2
 
     float new_speed_order = 0; // m/s
 
-    odometry->update();
+    //odometry->update();
 
-    float m_linear_speed = odometry->getLinearSpeed();// m/s
+    float l_linear_speed = odometry->getLinearSpeed();// m/s
     float desired_final_speed = max_speed_at_arrival; // m/s
     //float speed_order = Odometry::ticksToMillimeters((speed_command[M_L] + speed_command[M_R])/2)/1000.f;// m/s
 
-    sqrt((goal_X - odometry->getX()) * (goal_X - odometry->getX()) + (goal_Y - odometry->getY()) * (goal_Y - odometry->getY()));
-    float m_distance_to_goal = 0; //m
+    float l_distance_to_goal =sqrt((goal_X - odometry->getX()) * (goal_X - odometry->getX()) + (goal_Y - odometry->getY()) * (goal_Y - odometry->getY()));//m
 
-    float time_to_stop = (m_linear_speed - desired_final_speed) / max_deceleration;
+    float time_to_stop = (l_linear_speed - desired_final_speed) / max_deceleration;
     time_to_stop = MAX(0.f, time_to_stop);
     //ROS_INFO_STREAM("time to stop = " << time_to_stop << "s, ");
 
     float distance_to_stop
-      = time_to_stop * (m_linear_speed - desired_final_speed) / 2.;
+      = time_to_stop * (l_linear_speed - desired_final_speed) / 2.;
     //ROS_INFO_STREAM(", distance to stop = " << distance_to_stop << "m, ");
 
     // Compute extra time if accelerating
     float average_extra_speed =
-      m_linear_speed + (max_acceleration / 2. + max_deceleration / 2.) / float(UPDATE_RATE);
+      l_linear_speed + (max_acceleration / 2. + max_deceleration / 2.) / float(UPDATE_RATE);
     float extra_distance = 2 * average_extra_speed / float(UPDATE_RATE);
 
-    if (m_distance_to_goal < distance_to_stop)
+    if (l_distance_to_goal < distance_to_stop)
     {
         //ROS_INFO_STREAM("decelerate");
-        new_speed_order = m_linear_speed - max_deceleration / float(UPDATE_RATE);
+        new_speed_order = l_linear_speed - max_deceleration / float(UPDATE_RATE);
     }
-    else if (m_distance_to_goal < m_linear_speed / float(UPDATE_RATE))
+    else if (l_distance_to_goal < l_linear_speed / float(UPDATE_RATE))
     {
         //ROS_INFO_STREAM("EMERGENCY BRAKE");
         new_speed_order = 0;
     }
-    else if (m_distance_to_goal > distance_to_stop + extra_distance)
+    else if (l_distance_to_goal > distance_to_stop + extra_distance)
     {
         //ROS_INFO_STREAM("accelerate");
-        new_speed_order = m_linear_speed + max_acceleration / float(UPDATE_RATE);
+        new_speed_order = l_linear_speed + max_acceleration / float(UPDATE_RATE);
     }
     else
     {
         //ROS_INFO_STREAM("cruise speed");
-        new_speed_order = m_linear_speed;
+        new_speed_order = l_linear_speed;
     }
-    //ROS_INFO_STREAM("new speed: " << new_speed_order << " => " << m_linear_speed_cmd << std::endl);
+    //ROS_INFO_STREAM("new speed: " << new_speed_order << " => " << l_linear_speed_cmd << std::endl);
 
-    speed_order_limited[M_L] = MAX(new_speed_order, -speed_order[M_L]);
-    speed_order_limited[M_L] = MIN(new_speed_order, speed_order[M_L]);
-    speed_order_limited[M_R] = MAX(new_speed_order, -speed_order[M_R]);
-    speed_order_limited[M_R] = MIN(new_speed_order, speed_order[M_R]);
+    int32_t new_speed_order_tick = Odometry::millimetersToTicks(new_speed_order*1000);
+
+    speed_order_limited[M_L] = MAX(-new_speed_order_tick, speed_order[M_L]);
+    speed_order_limited[M_L] = MIN(new_speed_order_tick, speed_order[M_L]);
+    speed_order_limited[M_R] = MAX(-new_speed_order_tick, speed_order[M_R]);
+    speed_order_limited[M_R] = MIN(new_speed_order_tick, speed_order[M_R]);
 }
