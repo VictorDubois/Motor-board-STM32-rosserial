@@ -53,6 +53,7 @@ ros::NodeHandle MotorBoard::nh;
 DCMotorHardware MotorBoard::motorsHardware;
 DCMotor MotorBoard::motors;
 MCP3002 MotorBoard::currentReader;
+volatile long long MotorBoard::message_counter = 0;
 
 float MotorBoard::X = 0;
 float MotorBoard::Y = 0;
@@ -198,10 +199,8 @@ void MotorBoard::update() {
 	//int32_t left_speed = motors.get_speed(M_L);
 
 	odom_msg.header.frame_id = "odom";
-	//odom_msg.header.stamp.nsec = 0;
-	//odom_msg.header.stamp.sec = 0;
-	//odom_msg.header.seq = 0;
-	//odom_msg.header.stamp = ros::Time::now();
+	odom_msg.header.stamp = nh.now();
+	odom_msg.header.seq = message_counter++;
 	odom_msg.child_frame_id = "base_link";
 
 	for (unsigned int i = 0; i < (sizeof(odom_msg.pose.covariance)/sizeof(*(odom_msg.pose.covariance))); i++){

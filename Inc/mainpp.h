@@ -69,6 +69,7 @@ private:
 	static float X;
 	static float Y;
 	static float theta_offset;
+	volatile static long long message_counter;
 };
 
 #ifdef __cplusplus
