@@ -132,7 +132,7 @@ public:
 	void set_max_current(float a_max_current_left, float a_max_current_right);
 
 private:
-	int32_t speed_order[NB_MOTORS];
+	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
 	MCP3002* current_reader;
 
