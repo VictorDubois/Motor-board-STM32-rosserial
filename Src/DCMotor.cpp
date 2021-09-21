@@ -20,9 +20,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		speed_ID[i] = 0;
 		current[i] = 0;
 		accumulated_current[i] = 0;
-		for (int j = 0; j < SMPL; j++) {
-			speed[i][j] = 0;
-		}
+		speed[i] = 0;
 	}
 }
 
@@ -33,9 +31,7 @@ void DCMotor::resetMotor(int motor_id) {
 	voltage[motor_id] = 0;
 	speed_command[motor_id] = 0;
 	speed_order[motor_id] = 0;
-	for (int j = 0; j < SMPL; j++) {
-		speed_error[motor_id][j] = 0;
-	}
+	speed_error[motor_id] = 0;
 }
 
 void DCMotor::resetMotors() {
@@ -66,10 +62,8 @@ DCMotor::DCMotor() {
 		accumulated_current[i] = 0;
 		current[i] = 0;
 		stopped_timeouts[i] = 0;
-		for (int j = 0; j < SMPL; j++) {
-			speed[i][j] = 0;
-			speed_error[i][j] = 0;
-		}
+		speed[i] = 0;
+		speed_error[i] = 0;
 	}
 }
 
@@ -96,15 +90,6 @@ void DCMotor::update() {
 	}
 
 	for(int i = 0; i < NB_MOTORS; i++){
-		speed_ID[i]++;
-		if(speed_ID[i] >= SMPL) {
-			speed_ID[i]=0;
-		}
-		speed_error_ID[i]++;
-		if(speed_error_ID[i] >= SMPL) {
-			speed_error_ID[i]=0;
-		}
-
 		current[i] = current_reader->readCurrent(i);
 		if (current[i] == CURRENT_READER_OFFLINE) {
 			stopped_timeout = 300;
@@ -141,20 +126,12 @@ void DCMotor::get_speed(){
         	current_speed += ENC_BUF_SIZE;
         }
 
-        // average
-        if(speed_ID[i] == 0) {
-        	speed[i][speed_ID[i]] = speed[i][SMPL-1];
-        }
-        else {
-        	speed[i][speed_ID[i]] = speed[i][speed_ID[i]-1];
-        }
-
-        speed[i][speed_ID[i]] = current_speed * SAMPLING_PER_SEC;// ticks per second
+        speed[i] = current_speed * SAMPLING_PER_SEC;// ticks per second
     }
 }
 
 int32_t DCMotor::get_speed(uint8_t motor_id) {
-	return speed[motor_id][speed_ID[motor_id]];
+	return speed[motor_id];
 }
 
 int32_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
@@ -191,23 +168,21 @@ void DCMotor::control_ramp_speed(void) {
     //if( stopped ) return;
 
     for(int i = 0; i < NB_MOTORS; i++){
-        if( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] >= max_acceleration) {
-        	speed_command[i] = speed[i][speed_ID[i]]+max_acceleration;
+        if( (int32_t)(speed_order[i]) - speed[i] >= max_acceleration) {
+        	speed_command[i] = speed[i]+max_acceleration;
         }
-        else if ( (int32_t)(speed_order[i]) - speed[i][speed_ID[i]] <= -max_acceleration ) {
-        	speed_command[i] = speed[i][speed_ID[i]]-max_acceleration;
+        else if ( (int32_t)(speed_order[i]) - speed[i] <= -max_acceleration ) {
+        	speed_command[i] = speed[i]-max_acceleration;
         }
         else {
         	speed_command[i] = speed_order[i];
         }
 
-        speed_error[i][speed_error_ID[i]] = speed_command[i] - speed[i][speed_ID[i]];
-        for(int j = 0; j < SMPL; j++){
-            speed_integ_error[i] += speed_error[i][j];
-        }
+        speed_error[i] = speed_command[i] - speed[i];
+        speed_integ_error[i] += speed_error[i];
 
         voltage[i] =
-             (pid_p*speed_error[i][speed_error_ID[i]] +
+             (pid_p*speed_error[i] +
              pid_i*speed_integ_error[i]);
 
         voltage[i] = MIN(voltage[i], DUTYMAX);

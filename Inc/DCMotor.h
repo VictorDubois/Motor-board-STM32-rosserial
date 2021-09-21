@@ -21,16 +21,13 @@
 #define ENC_BUF_SIZE 65536
 #define HALF_ENC_BUF_SIZE 32768
 
-#define SMPL            10 // nb of samples in memory
-#define SPEED_SMPL      10 // nb of sample to perform average
-
 #define SAMPLING_USEC   10000 //microseconds
 #define SAMPLING_PER_SEC 1e6/SAMPLING_USEC // Hz
 
 #define SPEED_MAX       20 * 2048//2048 // ticks per s = 20 * 0.5tr/s
 #define ACCEL_MAX       20 * 1024//1024 // ticks per s per s = 20 * 0.25tr/s/s
 #define S_KP            0.02//0.07 //0.08
-#define S_KI            0.00015//0.0015 //0.002
+#define S_KI            0;//0.00015//0.0015 //0.002
 
 #ifndef M_PI
 #define M_PI 3.14159265359
@@ -146,10 +143,10 @@ private:
 
 	int dir[NB_MOTORS];
 
-	volatile int32_t speed[NB_MOTORS][SMPL];// samples to average
+	volatile int32_t speed[NB_MOTORS];// samples to average
 	volatile uint8_t speed_ID[NB_MOTORS];
 
-	volatile int32_t speed_error[NB_MOTORS][SMPL];// samples to integrate
+	volatile int32_t speed_error[NB_MOTORS];// samples to integrate
 	volatile uint8_t speed_error_ID[NB_MOTORS];
 
 	volatile int32_t speed_integ_error[NB_MOTORS];
