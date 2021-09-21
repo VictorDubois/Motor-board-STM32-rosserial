@@ -27,6 +27,7 @@
 
 krabi_msgs::encoders encoders_msg;
 krabi_msgs::motors motors_msg;
+krabi_msgs::motors_parameters asserv_msg;
 //krabi_msgs::odom_light odom_light_msg;
 //ros::Publisher encoders_pub("encoders", &encoders_msg);
 //ros::Publisher motors_pub("motors", &motors_msg);
@@ -36,6 +37,7 @@ std_msgs::String str_msg;
 //ros::Publisher chatter("chatter", &str_msg);
 nav_msgs::Odometry odom_msg;
 ros::Publisher odom_pub("odom", &odom_msg);
+ros::Publisher asserv_pub("asserv", &asserv_msg);
 
 float get_orientation_float(long encoder1, long encoder2);
 int fixOverflow(long after, long before);

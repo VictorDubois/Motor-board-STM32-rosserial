@@ -26,6 +26,8 @@ void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
+	asserv_msg.max_current_left = twist.linear.x;
+
 }
 
 void enable_motor_cb(const std_msgs::Bool& enable)
@@ -46,6 +48,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	if(htim->Instance == TIM15) {
 		MotorBoard::getDCMotor().update();
+
 	}
 }
 
@@ -77,6 +80,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 
 	nh.initNode();
 	nh.advertise(odom_pub);
+	nh.advertise(asserv_pub);
 	//nh.advertise(odom_light_pub);
 	//nh.advertise(chatter);
 	//nh.advertise(encoders_pub);
@@ -298,8 +302,15 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 
 		myboard.update();
 
+		for(int ii = 0; ii< 10 ; ii++){
+			int32_t right_speed = MotorBoard::getDCMotor().get_speed(M_R);
+			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
+			float current_speed = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+			asserv_msg.max_current = current_speed;
+			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500	;
+			asserv_pub.publish(&asserv_msg);
 
-
-		HAL_Delay(100);
+			HAL_Delay(10);
+		}
 	}
 }

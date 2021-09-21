@@ -29,7 +29,7 @@
 
 #define SPEED_MAX       20 * 2048//2048 // ticks per s = 20 * 0.5tr/s
 #define ACCEL_MAX       20 * 1024//1024 // ticks per s per s = 20 * 0.25tr/s/s
-#define S_KP            0.007//0.07 //0.08
+#define S_KP            0.02//0.07 //0.08
 #define S_KI            0.00015//0.0015 //0.002
 
 #ifndef M_PI
@@ -93,6 +93,8 @@ public:
 	 * @brief stop the motor and reset the asserv
 	 */
 	void resetMotor(int motor_id);
+
+	int32_t get_voltage(int8_t a_motor_id);
 
 	/**
 	 * @brief setter for the max speed (per motor)
