@@ -24,8 +24,8 @@
 #define SAMPLING_USEC   10000 //microseconds
 #define SAMPLING_PER_SEC 1e6/SAMPLING_USEC // Hz
 
-#define SPEED_MAX       20 * 2048//2048 // ticks per s = 20 * 0.5tr/s
-#define ACCEL_MAX       20 * 1024//1024 // ticks per s per s = 20 * 0.25tr/s/s
+#define SPEED_MAX       20 * 2048// Not used anymore //2048 // ticks per s = 20 * 0.5tr/s
+#define ACCEL_MAX       20 * 1024// Not used anymore //1024 // ticks per s per s = 20 * 0.25tr/s/s
 #define S_KP            0.02//0.07 //0.08
 #define S_KI            0;//0.00015//0.0015 //0.002
 

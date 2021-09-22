@@ -41,8 +41,8 @@ ros::Publisher asserv_pub("asserv", &asserv_msg);
 
 float get_orientation_float(long encoder1, long encoder2);
 int fixOverflow(long after, long before);
-float ticksToMillimeters(int32_t ticks);
-int32_t millimetersToTicks(float millimeters);
+constexpr float ticksToMillimeters(int32_t ticks);
+constexpr int32_t millimetersToTicks(float millimeters);
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
 void parameters_cb(const krabi_msgs::motors_parameters& parameters);

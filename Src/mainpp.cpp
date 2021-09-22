@@ -78,6 +78,9 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
 	motors = DCMotor(&motorsHardware, &currentReader);
 
+	motors.set_max_acceleration(millimetersToTicks(1000));//mm/s/s
+	motors.set_max_speed(millimetersToTicks(500));//mm/s
+
 	nh.initNode();
 	nh.advertise(odom_pub);
 	nh.advertise(asserv_pub);
@@ -137,12 +140,13 @@ int fixOverflow(long after, long before)
     return after - before;
 }
 
-float ticksToMillimeters(int32_t ticks)
+constexpr float ticksToMillimeters(int32_t ticks)
 {
 	return (DIST_PER_REVOLUTION * (float)ticks / TICKS_PER_REVOLUTION);
 }
 
-int32_t millimetersToTicks(float millimeters)
+
+constexpr int32_t millimetersToTicks(float millimeters)
 {
 	return static_cast<int32_t>(millimeters * TICKS_PER_REVOLUTION/DIST_PER_REVOLUTION);
 }
