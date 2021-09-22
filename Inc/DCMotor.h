@@ -160,7 +160,7 @@ private:
 	int32_t speed_command[NB_MOTORS];
 
 	int32_t max_speed;
-	int32_t max_acceleration;
+	int32_t max_speed_delta;
 	float pid_p;
 	float pid_i;
 	float max_current;

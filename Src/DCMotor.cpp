@@ -10,7 +10,7 @@
 DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
 	resetMotors();
 	max_speed = SPEED_MAX;
-	max_acceleration = ACCEL_MAX;
+	max_speed_delta = ACCEL_MAX;
 	set_max_current(0.5f);
 	set_max_current(10.f, 10.f);
 	pid_p = S_KP;
@@ -42,7 +42,7 @@ void DCMotor::resetMotors() {
 
 DCMotor::DCMotor() {
 	max_speed = SPEED_MAX;
-	max_acceleration = ACCEL_MAX;
+	max_speed_delta = ACCEL_MAX;
 	pid_p = S_KP;
 	pid_i = S_KI;
 	set_max_current(0.5f);
@@ -164,18 +164,18 @@ void DCMotor::control_ramp_speed(void) {
     //if( stopped ) return;
 
     for(int i = 0; i < NB_MOTORS; i++){
-        if( (int32_t)(speed_order[i]) - speed[i] >= max_acceleration) {
-        	speed_command[i] = speed[i]+max_acceleration;
+        if( (int32_t)(speed_order[i]) - speed[i] >= max_speed_delta) {
+        	speed_command[i] = speed[i]+max_speed_delta;
         }
-        else if ( (int32_t)(speed_order[i]) - speed[i] <= -max_acceleration ) {
-        	speed_command[i] = speed[i]-max_acceleration;
+        else if ( (int32_t)(speed_order[i]) - speed[i] <= -max_speed_delta ) {
+        	speed_command[i] = speed[i]-max_speed_delta;
         }
         else {
         	speed_command[i] = speed_order[i];
         }
 
         speed_error[i] = speed_command[i] - speed[i];
-        speed_integ_error[i] += speed_error[i];
+        speed_integ_error[i] += speed_error[i]; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
         voltage[i] =
              (pid_p*speed_error[i] +
@@ -198,7 +198,7 @@ void DCMotor::set_max_speed(int32_t a_max_speed)
 
 void DCMotor::set_max_acceleration(int32_t a_max_acceleration)
 {
-	max_acceleration = a_max_acceleration;
+	max_speed_delta = a_max_acceleration/SAMPLING_PER_SEC;
 }
 
 void DCMotor::set_pid_p(float a_pid_p)
