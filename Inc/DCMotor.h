@@ -144,10 +144,8 @@ private:
 	int dir[NB_MOTORS];
 
 	volatile int32_t speed[NB_MOTORS];// samples to average
-	volatile uint8_t speed_ID[NB_MOTORS];
 
 	volatile int32_t speed_error[NB_MOTORS];// samples to integrate
-	volatile uint8_t speed_error_ID[NB_MOTORS];
 
 	volatile int32_t speed_integ_error[NB_MOTORS];
 

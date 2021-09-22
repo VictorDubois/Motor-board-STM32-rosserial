@@ -17,7 +17,6 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	pid_i = S_KI;
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
-		speed_ID[i] = 0;
 		current[i] = 0;
 		accumulated_current[i] = 0;
 		speed[i] = 0;
@@ -26,7 +25,6 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 
 void DCMotor::resetMotor(int motor_id) {
 	dir[motor_id] = 0;
-	speed_error_ID[motor_id] = 0;
 	speed_integ_error[motor_id] = 0;
 	voltage[motor_id] = 0;
 	speed_command[motor_id] = 0;
@@ -53,8 +51,6 @@ DCMotor::DCMotor() {
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		dir[i] = 0;
-		speed_ID[i] = 0;
-		speed_error_ID[i] = 0;
 		speed_integ_error[i] = 0;
 		voltage[i] = 0;
 		speed_command[i] = 0;
