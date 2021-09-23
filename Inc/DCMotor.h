@@ -26,8 +26,12 @@
 
 #define SPEED_MAX       20 * 2048// Not used anymore //2048 // ticks per s = 20 * 0.5tr/s
 #define ACCEL_MAX       20 * 1024// Not used anymore //1024 // ticks per s per s = 20 * 0.25tr/s/s
-#define S_KP            0.02//0.07 //0.08
-#define S_KI            0;//0.00015//0.0015 //0.002
+
+#define KU  0.037
+#define TU  0.071
+#define S_KP            KU * 0.45//Ku = 0.037//0.07 //0.08
+#define S_KI            0.54 * (KU/TU)//0.00015//0.0015 //0.002
+#define S_KD            0//0.00015//0.0015 //0.002
 
 #ifndef M_PI
 #define M_PI 3.14159265359
