@@ -92,6 +92,7 @@ public:
 	void resetMotor(int motor_id);
 
 	int32_t get_voltage(int8_t a_motor_id);
+	int32_t get_error(int8_t a_motor_id);
 
 	/**
 	 * @brief setter for the max speed (per motor)

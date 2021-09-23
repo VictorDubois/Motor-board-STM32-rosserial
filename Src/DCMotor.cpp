@@ -191,6 +191,11 @@ int32_t DCMotor::get_voltage(int8_t a_motor_id)
 	return voltage[a_motor_id];
 }
 
+int32_t DCMotor::get_error(int8_t a_motor_id)
+{
+	return speed_error[a_motor_id];
+}
+
 void DCMotor::set_max_speed(int32_t a_max_speed)
 {
 	max_speed = a_max_speed;

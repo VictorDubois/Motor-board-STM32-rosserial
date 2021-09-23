@@ -311,7 +311,8 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
 			float current_speed = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 			asserv_msg.max_current = current_speed;
-			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500	;
+			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_error(M_R))/500;
+			//asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
 			asserv_pub.publish(&asserv_msg);
 
 			HAL_Delay(10);
