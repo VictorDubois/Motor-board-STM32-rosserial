@@ -122,6 +122,8 @@ public:
 	 */
 	void set_pid_i(float a_pid_i);
 
+	void set_pid_d(float a_pid_d);
+
 	/**
 	 * @brief setter for the overcurrent
 	 * @param a_max_current the overcurrent threshold
@@ -151,6 +153,7 @@ private:
 	volatile int32_t speed[NB_MOTORS];// samples to average
 
 	volatile int32_t speed_error[NB_MOTORS];// samples to integrate
+	volatile int32_t last_speed_error[NB_MOTORS];// samples to integrate
 
 	volatile int32_t speed_integ_error[NB_MOTORS];
 
@@ -168,6 +171,7 @@ private:
 	int32_t max_speed_delta;
 	float pid_p;
 	float pid_i;
+	float pid_d;
 	float max_current;
 
 	float max_currents[NB_MOTORS];
