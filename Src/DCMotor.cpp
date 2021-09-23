@@ -203,7 +203,7 @@ void DCMotor::set_max_speed(int32_t a_max_speed)
 
 void DCMotor::set_max_acceleration(int32_t a_max_acceleration)
 {
-	max_speed_delta = a_max_acceleration/SAMPLING_PER_SEC;
+	max_speed_delta = static_cast<int32_t>(static_cast<float>(a_max_acceleration)/static_cast<float>(SAMPLING_PER_SEC));
 }
 
 void DCMotor::set_pid_p(float a_pid_p)
