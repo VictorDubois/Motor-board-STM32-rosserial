@@ -78,7 +78,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
 	motors = DCMotor(&motorsHardware, &currentReader);
 
-	motors.set_max_acceleration(millimetersToTicks(1000));//mm/s/s
+	motors.set_max_acceleration(millimetersToTicks(100000));//mm/s/s
 	motors.set_max_speed(millimetersToTicks(500));//mm/s
 
 	nh.initNode();
@@ -188,7 +188,7 @@ void MotorBoard::update() {
 	if (!nh.connected()){
 		return;
 	}
-
+/*
 	int32_t encoder_left = motors.get_encoder_ticks(M_L);
 	int32_t encoder_right = motors.get_encoder_ticks(M_R);
 	int32_t right_speed = motors.get_speed(M_R);
@@ -261,7 +261,7 @@ void MotorBoard::update() {
 	odom_light_msg.current_motor_right = motors.get_accumulated_current(1);
 
 	odom_light_pub.publish(&odom_light_msg);*/
-
+/*
 	encoders_msg.encoder_left = encoder_left;//get_speed(M_L);
 	encoders_msg.encoder_right = encoder_right;//get_speed(M_R);
 //	encoders_msg.encoder_left = motors.get_speed(M_L);
@@ -274,7 +274,7 @@ void MotorBoard::update() {
 
 	motors_msg.current_left_accumulated = motors.get_accumulated_current(0);
 	motors_msg.current_right_accumulated = motors.get_accumulated_current(1);
-
+*/
 	//motors_pub.publish(&motors_msg);
 
 	str_msg.data = "Hello world!";
@@ -307,15 +307,18 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 		myboard.update();
 
 		for(int ii = 0; ii< 10 ; ii++){
+			uint32_t before = HAL_GetTick();
 			int32_t right_speed = MotorBoard::getDCMotor().get_speed(M_R);
 			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
 			float current_speed = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 			asserv_msg.max_current = current_speed;
-			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_error(M_R))/500;
+			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_error(M_R))/5000;
 			//asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
 			asserv_pub.publish(&asserv_msg);
 
-			HAL_Delay(10);
+			uint32_t after = HAL_GetTick();
+
+			HAL_Delay(10 - (after - before));
 		}
 	}
 }
