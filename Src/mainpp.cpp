@@ -188,7 +188,7 @@ void MotorBoard::update() {
 	if (!nh.connected()){
 		return;
 	}
-/*
+
 	int32_t encoder_left = motors.get_encoder_ticks(M_L);
 	int32_t encoder_right = motors.get_encoder_ticks(M_R);
 	int32_t right_speed = motors.get_speed(M_R);
@@ -261,7 +261,7 @@ void MotorBoard::update() {
 	odom_light_msg.current_motor_right = motors.get_accumulated_current(1);
 
 	odom_light_pub.publish(&odom_light_msg);*/
-/*
+
 	encoders_msg.encoder_left = encoder_left;//get_speed(M_L);
 	encoders_msg.encoder_right = encoder_right;//get_speed(M_R);
 //	encoders_msg.encoder_left = motors.get_speed(M_L);
@@ -274,7 +274,7 @@ void MotorBoard::update() {
 
 	motors_msg.current_left_accumulated = motors.get_accumulated_current(0);
 	motors_msg.current_right_accumulated = motors.get_accumulated_current(1);
-*/
+
 	//motors_pub.publish(&motors_msg);
 
 	str_msg.data = "Hello world!";
