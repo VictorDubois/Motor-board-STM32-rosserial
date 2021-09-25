@@ -24,6 +24,14 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		accumulated_current[i] = 0;
 		speed[i] = 0;
 	}
+
+	l_distance_to_goal = 42.f;
+	time_to_stop = 69.f;
+}
+
+void DCMotor::setOdometry(Odometry* a_odometry)
+{
+	odometry = a_odometry;
 }
 
 void DCMotor::resetMotor(int motor_id) {
@@ -202,6 +210,17 @@ int32_t DCMotor::get_error(int8_t a_motor_id)
 	return speed_error[a_motor_id];
 }
 
+float DCMotor::get_time()
+{
+	return time_to_stop;
+}
+
+float DCMotor::get_distance()
+{
+	return distance_to_stop;//sqrt((goal_X - odometry->getX()) * (goal_X - odometry->getX()) + (goal_Y - odometry->getY()) * (goal_Y - odometry->getY()));//m
+
+}
+
 void DCMotor::set_max_speed(int32_t a_max_speed)
 {
 	max_speed = a_max_speed;
@@ -253,8 +272,8 @@ void DCMotor::limitLinearSpeedCmdByGoal()
 		return;
 	}
 
-    float max_acceleration = 10*0.15f; // m*s-2
-    float max_deceleration = 10*0.15f; // m*s-2
+    float max_acceleration = 0.15f; // m*s-2
+    float max_deceleration = 0.15f; // m*s-2
 
     float new_speed_order = 0; // m/s
 
@@ -264,13 +283,13 @@ void DCMotor::limitLinearSpeedCmdByGoal()
     float desired_final_speed = max_speed_at_arrival; // m/s
     //float speed_order = Odometry::ticksToMillimeters((speed_command[M_L] + speed_command[M_R])/2)/1000.f;// m/s
 
-    float l_distance_to_goal =sqrt((goal_X - odometry->getX()) * (goal_X - odometry->getX()) + (goal_Y - odometry->getY()) * (goal_Y - odometry->getY()));//m
+    l_distance_to_goal =sqrt((goal_X - odometry->getX()) * (goal_X - odometry->getX()) + (goal_Y - odometry->getY()) * (goal_Y - odometry->getY()));//m
 
-    float time_to_stop = (l_linear_speed - desired_final_speed) / max_deceleration;
+    time_to_stop = (l_linear_speed - desired_final_speed) / max_deceleration;
     time_to_stop = MAX(0.f, time_to_stop);
     //ROS_INFO_STREAM("time to stop = " << time_to_stop << "s, ");
 
-    float distance_to_stop
+    distance_to_stop
       = time_to_stop * (l_linear_speed - desired_final_speed) / 2.;
     //ROS_INFO_STREAM(", distance to stop = " << distance_to_stop << "m, ");
 

@@ -28,7 +28,7 @@ void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
-	asserv_msg.max_current_left = twist.linear.x;
+	//asserv_msg.max_current_left = twist.linear.x;
 
 }
 
@@ -84,6 +84,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motors = DCMotor(&motorsHardware, &currentReader);
 	odometry = new Odometry();
 	odometry->setDCMotor(&motors);
+	motors.setOdometry(odometry);
 
 	motors.set_max_acceleration(Odometry::millimetersToTicks(5000));//mm/s/s
 	motors.set_max_speed(Odometry::millimetersToTicks(500));//mm/s
@@ -125,6 +126,7 @@ void MotorBoard::update() {
 	}
 
 	odometry->update();
+	//asserv_msg.max_current_left = static_cast<float>(odometry->getX());
 	//motors.update();
 
 	//int32_t right_speed = motors.get_speed(M_R);
@@ -220,25 +222,27 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	while(true) {
 		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-		uint32_t before = HAL_GetTick();
+		//uint32_t before = HAL_GetTick();
 
 		myboard.update();
-		uint32_t after = HAL_GetTick();
+		//uint32_t after = HAL_GetTick();
 
-		HAL_Delay(100 - (after - before));
-		/*for(int ii = 0; ii< 10 ; ii++){
+		//HAL_Delay(100 - (after - before));
+		for(int ii = 0; ii< 10 ; ii++){
 			uint32_t before = HAL_GetTick();
 			int32_t right_speed = MotorBoard::getDCMotor().get_speed(M_R);
 			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
-			float current_speed = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+			float current_speed = Odometry::ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 			asserv_msg.max_current = current_speed;
-			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_error(M_R))/5000;
+			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_distance());
+			asserv_msg.max_current_left = static_cast<float>(MotorBoard::getDCMotor().get_time());
+
 			//asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
 			asserv_pub.publish(&asserv_msg);
 
 			uint32_t after = HAL_GetTick();
 
 			HAL_Delay(10 - (after - before));
-		}*/
+		}
 	}
 }

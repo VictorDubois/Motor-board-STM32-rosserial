@@ -99,6 +99,8 @@ public:
 
 	int32_t get_voltage(int8_t a_motor_id);
 	int32_t get_error(int8_t a_motor_id);
+	float get_time();
+	float get_distance();
 
 	/**
 	 * @brief setter for the max speed (per motor)
@@ -140,6 +142,7 @@ public:
 	void limitLinearSpeedCmdByGoal();
 
 	void set_distance_asserv_params(bool use_distance_asserv, float goal_X, float goal_Y, float max_speed_at_arrival);
+	void setOdometry(Odometry* a_odometry);
 
 private:
 	volatile int32_t speed_order[NB_MOTORS];
@@ -187,6 +190,10 @@ private:
 	float goal_Y;
 	float max_speed_at_arrival;
 	int32_t speed_order_limited[NB_MOTORS];
+
+	float time_to_stop;
+	float l_distance_to_goal;
+	float distance_to_stop;
 };
 
 #endif /* DCMOTOR_H_ */
