@@ -78,7 +78,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
 	motors = DCMotor(&motorsHardware, &currentReader);
 
-	motors.set_max_acceleration(millimetersToTicks(100000));//mm/s/s
+	motors.set_max_acceleration(millimetersToTicks(5000));//mm/s/s
 	motors.set_max_speed(millimetersToTicks(500));//mm/s
 
 	nh.initNode();
@@ -148,7 +148,7 @@ constexpr float ticksToMillimeters(int32_t ticks)
 
 constexpr int32_t millimetersToTicks(float millimeters)
 {
-	return static_cast<int32_t>(millimeters * TICKS_PER_REVOLUTION/DIST_PER_REVOLUTION);
+	return static_cast<int32_t>((millimeters * TICKS_PER_REVOLUTION)/DIST_PER_REVOLUTION);
 }
 
 /*
@@ -303,10 +303,13 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	while(true) {
 		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		uint32_t before = HAL_GetTick();
 
 		myboard.update();
+		uint32_t after = HAL_GetTick();
 
-		for(int ii = 0; ii< 10 ; ii++){
+		HAL_Delay(100 - (after - before));
+		/*for(int ii = 0; ii< 10 ; ii++){
 			uint32_t before = HAL_GetTick();
 			int32_t right_speed = MotorBoard::getDCMotor().get_speed(M_R);
 			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
@@ -319,6 +322,6 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 			uint32_t after = HAL_GetTick();
 
 			HAL_Delay(10 - (after - before));
-		}
+		}*/
 	}
 }
