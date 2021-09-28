@@ -274,10 +274,6 @@ void DCMotor::limitLinearSpeedCmdByGoal()
 	if (compute_limit_in > 0)
 	{
 		compute_limit_in--;
-		for(int ii = 0; ii< NB_MOTORS; ii++)
-		{
-			speed_order_limited[ii] = speed_order[ii];
-		}
 		return;
 	}
 	int32_t UPDATE_RATE_limite_goal = 10;
