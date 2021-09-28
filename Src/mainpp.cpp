@@ -154,6 +154,9 @@ void MotorBoard::update() {
 
 	for (unsigned int i = 0; i < (sizeof(odom_msg.twist.covariance)/sizeof(*(odom_msg.twist.covariance))); i++){
 		odom_msg.twist.covariance[i] = 0;
+		if (i < 20){
+			odom_msg.twist.covariance[i] = motors.getDebug(i);
+		}
 	}
 
 	odom_msg.twist.twist.linear.x = odometry->getLinearSpeed();

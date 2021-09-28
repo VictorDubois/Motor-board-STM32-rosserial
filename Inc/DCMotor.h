@@ -144,6 +144,7 @@ public:
 	void set_distance_asserv_params(bool use_distance_asserv, float goal_X, float goal_Y, float max_speed_at_arrival);
 	void setOdometry(Odometry* a_odometry);
 
+	float getDebug(int id){ return debug[id];}
 private:
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -194,6 +195,11 @@ private:
 	float time_to_stop;
 	float l_distance_to_goal;
 	float distance_to_stop;
+	float new_speed_order;
+
+	int32_t compute_limit_in;
+
+	float debug[20];
 };
 
 #endif /* DCMOTOR_H_ */
