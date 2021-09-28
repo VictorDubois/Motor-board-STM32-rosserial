@@ -272,6 +272,7 @@ void DCMotor::limitLinearSpeedCmdByGoal()
 		return;
 	}
 	if (compute_limit_in > 0)
+
 	{
 		compute_limit_in--;
 		return;
@@ -282,7 +283,7 @@ void DCMotor::limitLinearSpeedCmdByGoal()
 
 
     float max_acceleration = 0.45f; // m*s-2
-    float max_deceleration = 0.05f; // m*s-2
+    float max_deceleration = 0.3f; // m*s-2
 
     new_speed_order = 0; // m/s
 
@@ -307,14 +308,14 @@ void DCMotor::limitLinearSpeedCmdByGoal()
       l_linear_speed + (max_acceleration / 2. + max_deceleration / 2.) / float(UPDATE_RATE_limite_goal);
     float extra_distance = 2 * average_extra_speed / float(UPDATE_RATE_limite_goal);
 
-    if (l_distance_to_goal < 5*distance_to_stop)
+    if (l_distance_to_goal < distance_to_stop)
     {
     	debug[0] = 0.0f;
         //ROS_INFO_STREAM("decelerate");
-        new_speed_order = l_linear_speed - 100*max_deceleration / float(UPDATE_RATE_limite_goal);
+        new_speed_order = l_linear_speed - max_deceleration / float(UPDATE_RATE_limite_goal);
         new_speed_order = MAX(0, new_speed_order);
     }
-    else if (l_distance_to_goal < 2*l_linear_speed / float(UPDATE_RATE_limite_goal))
+    else if (l_distance_to_goal < l_linear_speed / float(UPDATE_RATE_limite_goal))
     {
     	debug[0] = 0.1f;
         //ROS_INFO_STREAM("EMERGENCY BRAKE");
