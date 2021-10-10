@@ -23,7 +23,7 @@ public:
 	void update();
 	float getX(){return X;};
 	float getY(){return Y;};
-	float getTheta(){return current_theta;};
+	float getTheta(){return current_theta_rad;};
 	float getLinearSpeed(){return m_linear_speed;};
 	float getAngularSpeed(){return m_angular_speed;};
 	void setDCMotor(DCMotor* motors);
@@ -39,7 +39,7 @@ private:
 	float X;
 	float Y;
 	float theta_offset;
-	float current_theta;
+	float current_theta_rad;
 	float m_linear_speed;
 	float m_angular_speed;
 };

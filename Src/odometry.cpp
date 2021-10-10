@@ -16,7 +16,7 @@ Odometry::Odometry():
 	X(0),
 	Y(0),
 	theta_offset(0),
-	current_theta(0),
+	current_theta_rad(0),
 	m_linear_speed(0),
 	m_angular_speed(0)
 {
@@ -116,7 +116,7 @@ void Odometry::update()
 	float current_theta = get_orientation_float(encoder_left, encoder_right);
 	current_theta += theta_offset;
 
-	float current_theta_rad = current_theta * M_PI / 180.f;
+	current_theta_rad = current_theta * M_PI / 180.f;
 
 	X += linear_dist * cos(current_theta_rad);
 	Y += linear_dist * sin(current_theta_rad);
