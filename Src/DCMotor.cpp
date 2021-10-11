@@ -17,12 +17,26 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	set_max_current(0.5f);
 	set_max_current(10.f, 10.f);
 	pid_p = S_KP;
-	pid_i = 0.0028;
+	pid_i = 0.0028f;
+	pid_d = 0.f;
+
+	// Classic PID
+	//pid_p = 0.0222;
+	//pid_i = 0.00625;
+	//pid_d = 0.0197;
+
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		current[i] = 0;
 		accumulated_current[i] = 0;
 		speed[i] = 0;
+		dir[i] = 0;
+		speed_integ_error[i] = 0;
+		voltage[i] = 0;
+		speed_command[i] = 0;
+		speed_order[i] = 0;
+		stopped_timeouts[i] = 0;
+		speed_error[i] = 0;
 	}
 
 	l_distance_to_goal = 0.f;
@@ -32,17 +46,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	{
 		debug[i] = 0;
 	}
-
 	stopped_timeout = 0;
-	for (int i = 0; i< NB_MOTORS; i++) {
-		dir[i] = 0;
-		speed_integ_error[i] = 0;
-		voltage[i] = 0;
-		speed_command[i] = 0;
-		speed_order[i] = 0;
-		stopped_timeouts[i] = 0;
-		speed_error[i] = 0;
-	}
 }
 
 void DCMotor::setOdometry(Odometry* a_odometry)
@@ -192,7 +196,9 @@ void DCMotor::control_ramp_speed(void) {
 
         voltage[i] =
              (pid_p*speed_error[i] +
-             pid_i*speed_integ_error[i]);
+             pid_i*speed_integ_error[i] + pid_d * (speed_error[i] - last_speed_error[i]));
+
+        last_speed_error[i] = speed_error[i];
 
         voltage[i] = MIN(voltage[i], DUTYMAX);
         voltage[i] = MAX(voltage[i], -DUTYMAX);
@@ -240,6 +246,11 @@ void DCMotor::set_pid_i(float a_pid_i)
 	pid_i = a_pid_i;
 }
 
+void DCMotor::set_pid_d(float a_pid_d)
+{
+	pid_d = a_pid_d;
+}
+
 void DCMotor::set_max_current(float a_max_current)
 {
 	max_current = a_max_current * ONE_AMP;
@@ -272,7 +283,6 @@ void DCMotor::limitLinearSpeedCmdByGoal()
 		return;
 	}
 	if (compute_limit_in > 0)
-
 	{
 		compute_limit_in--;
 		return;
