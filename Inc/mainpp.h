@@ -43,6 +43,7 @@ ros::Publisher asserv_pub("asserv", &asserv_msg);
 float get_orientation_float(long encoder1, long encoder2);
 int fixOverflow(long after, long before);
 
+void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg);
 void cmd_vel_cb(const geometry_msgs::Twist& twist);
 void parameters_cb(const krabi_msgs::motors_parameters& parameters);
 void enable_motor_cb(const std_msgs::Bool& enable);

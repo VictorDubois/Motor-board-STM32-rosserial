@@ -147,6 +147,9 @@ public:
 	void setOdometry(Odometry* a_odometry);
 
 	float getDebug(int id){ return debug[id];}
+
+	void override_PWM(int pwm_left, int pwm_right);
+	void stop_pwm_override();
 private:
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -204,6 +207,9 @@ private:
 	int32_t compute_limit_in;
 
 	float debug[20];
+
+	bool override_pwm;
+	int override_pwms[NB_MOTORS];
 };
 
 #endif /* DCMOTOR_H_ */

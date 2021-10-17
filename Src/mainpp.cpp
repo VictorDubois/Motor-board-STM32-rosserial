@@ -12,7 +12,23 @@ ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 ros::Subscriber<krabi_msgs::motors_parameters> parameters_sub("motors_parameters", parameters_cb);
 ros::Subscriber<krabi_msgs::motors_distance_asserv> distance_asserv_sub("motors_distance_asserv", distance_asserv_cb);
 ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
+ros::Subscriber<krabi_msgs::motors_cmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);
 
+void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
+{
+	if (!motors_cmd_msg.enable_motors) {
+		MotorBoard::getDCMotor().resetMotors();
+	}
+
+	if (motors_cmd_msg.override_PWM)
+	{
+		MotorBoard::getDCMotor().override_PWM(motors_cmd_msg.PWM_override_left, motors_cmd_msg.PWM_override_right);
+	}
+	else
+	{
+		MotorBoard::getDCMotor().stop_pwm_override();
+	}
+}
 
 void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
 {
@@ -87,7 +103,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motors.setOdometry(odometry);
 
 	motors.set_max_acceleration(Odometry::millimetersToTicks(5000));//mm/s/s
-	motors.set_max_speed(Odometry::millimetersToTicks(500));//mm/s
+	motors.set_max_speed(Odometry::millimetersToTicks(500));//mm/s (=1.9rad/s)
 
 	nh.initNode();
 	//nh.advertise(odom_pub);
