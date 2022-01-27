@@ -82,6 +82,7 @@ void DCMotor::resetMotor(int motor_id) {
 	speed_command[motor_id] = 0;
 	speed_order[motor_id] = 0;
 	speed_error[motor_id] = 0;
+	override_pwms[motor_id] = 0;
 }
 
 void DCMotor::resetMotors() {
