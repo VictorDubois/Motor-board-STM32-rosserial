@@ -16,6 +16,7 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 {
 	if (!motors_cmd_msg.enable_motors) {
 		MotorBoard::getDCMotor().resetMotors();
+		return;
 	}
 
 	if (motors_cmd_msg.override_PWM)
