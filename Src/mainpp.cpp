@@ -107,6 +107,8 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.subscribe(twist_sub);
 	nh.subscribe(parameters_sub);
 	nh.subscribe(enable_sub);
+	nh.subscribe(motors_cmd_sub);
+
 	HAL_Delay(100);
 	while (!nh.connected())
 	{
