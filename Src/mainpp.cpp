@@ -95,7 +95,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
 	motors = DCMotor(&motorsHardware, &currentReader);
 
-	motors.set_max_acceleration(millimetersToTicks(100000));//mm/s/s
+	motors.set_max_acceleration(millimetersToTicks(3000));//mm/s/s
 	motors.set_max_speed(millimetersToTicks(500));//mm/s (=1.9rad/s)
 
 	nh.initNode();
