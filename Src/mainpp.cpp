@@ -82,9 +82,9 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	motors.set_max_speed(millimetersToTicks(500));//mm/s
 
 	nh.initNode();
-	nh.advertise(odom_pub);
+	//nh.advertise(odom_pub);
 	nh.advertise(asserv_pub);
-	//nh.advertise(odom_light_pub);
+	nh.advertise(odom_light_pub);
 	//nh.advertise(chatter);
 	//nh.advertise(encoders_pub);
 	//nh.advertise(motors_pub);
@@ -188,7 +188,7 @@ void MotorBoard::update() {
 	if (!nh.connected()){
 		return;
 	}
-/*
+
 	int32_t encoder_left = motors.get_encoder_ticks(M_L);
 	int32_t encoder_right = motors.get_encoder_ticks(M_R);
 	int32_t right_speed = motors.get_speed(M_R);
@@ -203,10 +203,11 @@ void MotorBoard::update() {
 	X += linear_dist * cos(current_theta_rad);
 	Y += linear_dist * sin(current_theta_rad);
 
+
 	//int32_t right_speed = motors.get_speed(M_R);
 	//int32_t left_speed = motors.get_speed(M_L);
 
-	odom_msg.header.frame_id = "odom";
+	/*odom_msg.header.frame_id = "odom";
 	odom_msg.header.stamp = nh.now();
 	odom_msg.header.seq = message_counter++;
 	odom_msg.child_frame_id = "base_link";
@@ -219,7 +220,6 @@ void MotorBoard::update() {
 	odom_msg.pose.pose.position.y = Y;
 	odom_msg.pose.pose.position.z = 0;
 
-	geometry_msgs::Quaternion odom_quat = tf::createQuaternionFromYaw(current_theta_rad);
 	odom_msg.pose.pose.orientation = odom_quat;
 
 	//odom_msg.pose.pose.orientation.x = 0;
@@ -236,19 +236,20 @@ void MotorBoard::update() {
 
 	odom_msg.twist.twist.angular.x = 0;
 	odom_msg.twist.twist.angular.y = 0;
-	odom_msg.twist.twist.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f;
-	odom_pub.publish(&odom_msg);
 
 
+	odom_msg.twist.twist.angular.z = odometry->getAngularSpeed();
+	odom_pub.publish(&odom_msg);*/
 
-	/*odom_light_msg.header.frame_id = "odom_light";
+
+	odom_light_msg.header.stamp = nh.now();
+	odom_light_msg.header.seq = message_counter++;
+	odom_light_msg.header.frame_id = "odom_light";
 	odom_light_msg.pose.position.x = X;
 	odom_light_msg.pose.position.y = Y;
 	odom_light_msg.pose.position.z = 0;
 
-	odom_light_msg.pose.orientation.x = 0;
-	odom_light_msg.pose.orientation.y = 0;
-	odom_light_msg.pose.orientation.z = current_theta_rad;
+	odom_light_msg.pose.orientation = tf::createQuaternionFromYaw(current_theta_rad);
 
 	odom_light_msg.speed.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 	odom_light_msg.speed.linear.y = 0;
@@ -257,24 +258,18 @@ void MotorBoard::update() {
 	odom_light_msg.speed.angular.x = 0;
 	odom_light_msg.speed.angular.y = 0;
 	odom_light_msg.speed.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f;
-	odom_light_msg.current_motor_left = motors.get_accumulated_current(0);
-	odom_light_msg.current_motor_right = motors.get_accumulated_current(1);
+	odom_light_msg.current_motor_left = motors.get_accumulated_current(M_L);
+	odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
 
-	odom_light_pub.publish(&odom_light_msg);*/
-/*
-	encoders_msg.encoder_left = encoder_left;//get_speed(M_L);
-	encoders_msg.encoder_right = encoder_right;//get_speed(M_R);
-//	encoders_msg.encoder_left = motors.get_speed(M_L);
-//	encoders_msg.encoder_right = motors.get_speed(M_R);
-	//encoders_pub.publish(&encoders_msg);
 
-	motors_msg.encoders = encoders_msg;
-	motors_msg.current_left = motors.get_current(0);
-	motors_msg.current_right = motors.get_current(1);
+	odom_light_pub.publish(&odom_light_msg);
 
-	motors_msg.current_left_accumulated = motors.get_accumulated_current(0);
-	motors_msg.current_right_accumulated = motors.get_accumulated_current(1);
-*/
+	motors_msg.current_left = motors.get_current(M_L);
+	motors_msg.current_right = motors.get_current(M_R);
+
+	motors_msg.current_left_accumulated = motors.get_accumulated_current(M_L);
+	motors_msg.current_right_accumulated = motors.get_accumulated_current(M_R);
+
 	//motors_pub.publish(&motors_msg);
 
 	str_msg.data = "Hello world!";
