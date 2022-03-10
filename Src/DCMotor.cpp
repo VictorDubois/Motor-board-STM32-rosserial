@@ -90,9 +90,11 @@ void DCMotor::update() {
 	}
 	else {
 		for(int i = 0; i < NB_MOTORS; i++){
-			stopped_timeouts[i]--;
-			resetMotor(i);
-			override_pwms[i] = 0;
+			if (stopped_timeouts[i] > 0){
+				stopped_timeouts[i]--;
+				resetMotor(i);
+				override_pwms[i] = 0;
+			}
 		}
 		control_ramp_speed();
 
