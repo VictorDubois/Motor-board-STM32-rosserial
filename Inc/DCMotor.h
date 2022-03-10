@@ -137,6 +137,8 @@ public:
 	 */
 	void set_max_current(float a_max_current_left, float a_max_current_right);
 
+	void override_PWM(int pwm_left, int pwm_right);
+	void stop_pwm_override();
 private:
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -175,6 +177,9 @@ private:
 	float max_current;
 
 	float max_currents[NB_MOTORS];
+
+	bool override_pwm;
+	int override_pwms[NB_MOTORS];
 };
 
 

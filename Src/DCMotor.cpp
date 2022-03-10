@@ -16,6 +16,9 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	pid_p = 0.0222;
 	pid_i = 0.00625;
 	pid_d = 0.0197;
+
+	override_pwm = false;
+
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		current[i] = 0;
@@ -33,7 +36,27 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		stopped_timeouts[i] = 0;
 		speed_error[i] = 0;
 		last_speed_error[i] = 0;
+		override_pwms[i] = 0;
 	}
+
+	stopped_timeout = 0;
+}
+
+void DCMotor::override_PWM(int pwm_left, int pwm_right)
+{
+	override_pwm = true;
+	override_pwms[M_L] = pwm_left;
+	override_pwms[M_R] = pwm_right;
+}
+
+void DCMotor::stop_pwm_override()
+{
+	if (override_pwm) {
+		// Reset asserv that probably diverged during override
+		resetMotors();
+	}
+
+	override_pwm = false;
 }
 
 void DCMotor::resetMotor(int motor_id) {
@@ -66,15 +89,21 @@ void DCMotor::update() {
 	}
 	else {
 		for(int i = 0; i < NB_MOTORS; i++){
-			if (stopped_timeouts[i] > 0){
-				stopped_timeouts[i]--;
-				resetMotor(i);
-			}
+			stopped_timeouts[i]--;
+			resetMotor(i);
+			override_pwms[i] = 0;
 		}
 		control_ramp_speed();
 
 		//hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv
-		hardware->setPWM(voltage[M_L], voltage[M_R]);
+
+		if (override_pwm)
+		{
+			hardware->setPWM(override_pwms[M_L], override_pwms[M_R]);
+		}
+		else {
+			hardware->setPWM(voltage[M_L], voltage[M_R]);
+		}
 	}
 
 	for(int i = 0; i < NB_MOTORS; i++){
