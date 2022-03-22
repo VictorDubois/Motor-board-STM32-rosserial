@@ -61,6 +61,7 @@ public:
 	static void set_odom(float a_x, float a_y, float a_theta);
 
 	void update();
+	void update_inputs();
 private:
 	static ros::NodeHandle nh;
 	static DCMotorHardware motorsHardware;

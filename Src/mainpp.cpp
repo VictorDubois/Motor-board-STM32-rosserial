@@ -203,6 +203,10 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
     return dist / 1000.f; // convert to meters
 }
 
+void MotorBoard::update_inputs() {
+	nh.spinOnce();
+}
+
 void MotorBoard::update() {
 	if (!nh.connected()){
 		return;
@@ -281,7 +285,7 @@ void MotorBoard::update() {
 	odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
 
 
-	odom_light_pub.publish(&odom_light_msg);
+	//odom_light_pub.publish(&odom_light_msg);
 
 	motors_msg.current_left = motors.get_current(M_L);
 	motors_msg.current_right = motors.get_current(M_R);
@@ -313,26 +317,38 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 {
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
-
+	uint32_t before = HAL_GetTick();
+	uint32_t after = HAL_GetTick();
+	int32_t waiting_time = 0;
 	while(true) {
 		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-
+		before = HAL_GetTick();
 		myboard.update();
 
 		for(int ii = 0; ii< 10 ; ii++){
-			uint32_t before = HAL_GetTick();
+			//nh.spinOnce();
+			myboard.update_inputs();
 			int32_t right_speed = MotorBoard::getDCMotor().get_speed(M_R);
 			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
 			float current_speed = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 			asserv_msg.max_current = current_speed;
 			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_error(M_R))/5000;
 			//asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
+
 			asserv_pub.publish(&asserv_msg);
 
-			uint32_t after = HAL_GetTick();
+			// Maintain Loop @100Hz
+			// subtle: the measure is only at the millisecond level
+			// A basic before/after returns almost always 0, instead of 0.9ms
+			after = HAL_GetTick();
+			waiting_time = 10 - (after - (before + ii*10));
+			if (waiting_time < 0 || waiting_time > 10)
+			{
+				waiting_time = 10;
+			}
 
-			HAL_Delay(10 - (after - before));
+			HAL_Delay(waiting_time);
 		}
 	}
 }
