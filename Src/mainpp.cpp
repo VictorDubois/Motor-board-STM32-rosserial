@@ -285,7 +285,7 @@ void MotorBoard::update() {
 	odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
 
 
-	//odom_light_pub.publish(&odom_light_msg);
+	odom_light_pub.publish(&odom_light_msg);
 
 	motors_msg.current_left = motors.get_current(M_L);
 	motors_msg.current_right = motors.get_current(M_R);
