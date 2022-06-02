@@ -319,7 +319,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
 	uint32_t before = HAL_GetTick();
 	uint32_t after = HAL_GetTick();
-	int32_t waiting_time = 0;
+	int32_t waiting_time = 2;
 	while(true) {
 		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
@@ -336,18 +336,19 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_error(M_R))/5000;
 			//asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
 
-			asserv_pub.publish(&asserv_msg);
+			//asserv_pub.publish(&asserv_msg);
 
 			// Maintain Loop @100Hz
 			// subtle: the measure is only at the millisecond level
 			// A basic before/after returns almost always 0, instead of 0.9ms
-			after = HAL_GetTick();
+			/*after = HAL_GetTick();
 			waiting_time = 10 - (after - (before + ii*10));
 			if (waiting_time < 0 || waiting_time > 10)
 			{
 				waiting_time = 10;
 			}
 
+			HAL_Delay(waiting_time);*/
 			HAL_Delay(waiting_time);
 		}
 	}
