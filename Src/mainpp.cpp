@@ -32,10 +32,11 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 	}
 }
 
-void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
+void set_odom_alone_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
 {
 	MotorBoard::set_odom(req.x, req.y, req.theta);
 }
+ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);
 
 void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
 {
@@ -138,6 +139,8 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 		}
 	    HAL_Delay(MS_BETWEEN_UPDATES);
 	}
+
+
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}

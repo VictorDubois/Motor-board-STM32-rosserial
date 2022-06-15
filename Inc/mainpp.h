@@ -59,6 +59,7 @@ public:
 	static ros::NodeHandle& getNodeHandle(void);
 	static DCMotor& getDCMotor(void);
 	static void set_odom(float a_x, float a_y, float a_theta);
+	void set_odom_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res);
 
 	void update();
 	void update_inputs();
