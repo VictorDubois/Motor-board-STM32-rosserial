@@ -52,7 +52,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -109,10 +108,14 @@ void Error_Handler(void);
 #define SPI_CLK_GPIO_Port GPIOA
 #define ENC1_SIGA_PASSIVE_Pin GPIO_PIN_10
 #define ENC1_SIGA_PASSIVE_GPIO_Port GPIOA
+#define DBG2_Pin GPIO_PIN_15
+#define DBG2_GPIO_Port GPIOA
 #define PWM_B_Pin GPIO_PIN_4
 #define PWM_B_GPIO_Port GPIOB
 #define SPI_MOSI_Pin GPIO_PIN_6
 #define SPI_MOSI_GPIO_Port GPIOB
+#define DBG1_Pin GPIO_PIN_7
+#define DBG1_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
@@ -122,5 +125,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

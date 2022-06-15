@@ -6,6 +6,9 @@
  */
 #include <mainpp.h>
 #include <constants.h>
+extern "C" {
+	#include "main.h"
+}
 #include <tf/tf.h>
 ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 ros::Subscriber<krabi_msgs::motors_parameters> parameters_sub("motors_parameters", parameters_cb);
@@ -63,9 +66,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
-	if(htim->Instance == TIM15) {
+	if (htim->Instance == TIM15) {
 		MotorBoard::getDCMotor().update();
 
+	}
+	if (htim->Instance == TIM7) {
 	}
 }
 
@@ -91,14 +96,26 @@ void MotorBoard::set_odom(float a_x, float a_y, float a_theta)
 }
 
 MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
-	motorsHardware = DCMotorHardware(GPIOA, GPIO_PIN_6, GPIOA, GPIO_PIN_5, TIM1, TIM2, a_motorTimHandler, TIM_CHANNEL_4, a_motorTimHandler, TIM_CHANNEL_1);
-	currentReader = MCP3002(GPIOC, GPIO_PIN_7, GPIOB, GPIO_PIN_6, GPIOA, GPIO_PIN_9, GPIOA, GPIO_PIN_7);
+
+	while(false)
+	{
+		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, static_cast<GPIO_PinState>(bool(int(HAL_GetTick()/1000)%2))); // Turn On/OFF LED
+		HAL_Delay(100);
+	}
+
+	HAL_Delay(1);//3000, 4000, 5000 works
+	//1, 500, 2000 does not work
+
+	motorsHardware = DCMotorHardware(TIM1, TIM2, a_motorTimHandler, TIM_CHANNEL_4, a_motorTimHandler, TIM_CHANNEL_1);
+	currentReader = MCP3002();
 	motors = DCMotor(&motorsHardware, &currentReader);
 
 	motors.set_max_acceleration(millimetersToTicks(3000));//mm/s/s
 	motors.set_max_speed(millimetersToTicks(500));//mm/s (=1.9rad/s)
 
 	nh.initNode();
+	HAL_Delay(100);
+
 	//nh.advertise(odom_pub);
 	nh.advertise(asserv_pub);
 	nh.advertise(odom_light_pub);
@@ -307,14 +324,14 @@ void setup()
 
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);//LED
   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);//BRAKE
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);//DIR_A
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);//DIR_B
+  HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);//DIR_A
+  HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET);//DIR_B
 }
-
 
 
 void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler)
 {
+	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
 	uint32_t before = HAL_GetTick();

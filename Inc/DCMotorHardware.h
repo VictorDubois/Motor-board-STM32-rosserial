@@ -21,11 +21,7 @@ class DCMotorHardware
 {
 public:
 	DCMotorHardware();
-	DCMotorHardware(GPIO_TypeDef* dir_right_gpio_bank,
-			const uint16_t dir_right_gpio,
-			GPIO_TypeDef* dir_left_gpio_bank,
-			const uint16_t dir_left_gpio,
-			TIM_TypeDef* encoder_right_timer,
+	DCMotorHardware(TIM_TypeDef* encoder_right_timer,
 			TIM_TypeDef* encoder_left_timer,
 			TIM_HandleTypeDef* motor_right_timer,
 			const int32_t motor_right_timer_channel,

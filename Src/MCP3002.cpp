@@ -9,24 +9,23 @@
 */
 
 #include <MCP3002.h>
+
+
+extern "C" {
+	#include "main.h" // Include pin definitions
+}
+
 #define INVERTED_HIGH LOW
 #define INVERTED_LOW HIGH
-MCP3002::MCP3002(GPIO_TypeDef* a_miso_gpio_bank,
-		const uint16_t a_miso_gpio,
-		GPIO_TypeDef* a_mosi_gpio_bank,
-		const uint16_t a_mosi_gpio,
-		GPIO_TypeDef* a_clk_bank,
-		const uint16_t a_clk_gpio,
-		GPIO_TypeDef* a_cs_gpio_bank,
-		const uint16_t a_cs_gpio) {
-	m_miso_gpio_bank = a_miso_gpio_bank;
-	m_miso_gpio = a_miso_gpio;
-	m_mosi_gpio_bank =  a_mosi_gpio_bank;
-	m_mosi_gpio =  a_mosi_gpio;
-	m_clk_bank = a_clk_bank;
-	m_clk_gpio = a_clk_gpio;
-	m_cs_gpio_bank = a_cs_gpio_bank;
-	m_cs_gpio = a_cs_gpio;
+MCP3002::MCP3002() {
+	m_miso_gpio_bank =  SPI_MISO_GPIO_Port;
+	m_miso_gpio = SPI_MISO_Pin;
+	m_mosi_gpio_bank =  SPI_MOSI_GPIO_Port;
+	m_mosi_gpio =  SPI_MOSI_Pin;
+	m_clk_bank = SPI_CLK_GPIO_Port;
+	m_clk_gpio = SPI_CLK_Pin;
+	m_cs_gpio_bank = SPI_CS_GPIO_Port;
+	m_cs_gpio = SPI_CS_Pin;
 }
 
 int MCP3002::readCurrent(int adcnum) {
@@ -41,13 +40,13 @@ int MCP3002::readADC(int adcnum) {
 
   // algo
   //digitalWrite(_cspin, INVERTED_HIGH);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
   //HAL_Delay(1);
   //digitalWrite(_clockpin, INVERTED_LOW); //  # start clock low
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);//  # start clock low
+  HAL_GPIO_WritePin(SPI_CLK_GPIO_Port, SPI_CLK_Pin, GPIO_PIN_SET);//  # start clock low
   //HAL_Delay(1);
   //digitalWrite(_cspin, INVERTED_LOW); //     # bring CS low
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_SET); //     # bring CS low
+  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET); //     # bring CS low
   //HAL_Delay(1);
 
   int commandout = adcnum*4; // 4 added so that 1 is converted to 4, this makes both channels (0 and 1) usable
@@ -57,20 +56,19 @@ int MCP3002::readADC(int adcnum) {
   for (int i=0; i<5; i++) {
 	if (commandout & 0x80){
 		//digitalWrite(_mosipin, INVERTED_HIGH);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(SPI_MOSI_GPIO_Port, SPI_MOSI_Pin, GPIO_PIN_RESET);
 	}
 	else {
 	    //digitalWrite(_mosipin, INVERTED_LOW);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-
+		HAL_GPIO_WritePin(SPI_MOSI_GPIO_Port, SPI_MOSI_Pin, GPIO_PIN_SET);
 	}
 	//HAL_Delay(1);
 	commandout <<= 1;
 	//digitalWrite(_clockpin, INVERTED_HIGH);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SPI_CLK_GPIO_Port, SPI_CLK_Pin, GPIO_PIN_RESET);
 	//HAL_Delay(1);
 	//digitalWrite(_clockpin, INVERTED_LOW);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SPI_CLK_GPIO_Port, SPI_CLK_Pin, GPIO_PIN_SET);
 	//HAL_Delay(1);
 
   }
@@ -79,19 +77,19 @@ int MCP3002::readADC(int adcnum) {
   // read in one empty bit, one null bit and 10 ADC bits
   for (int i=0; i<12; i++) {
 	  //digitalWrite(_clockpin, INVERTED_HIGH);
-	  	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+	  	HAL_GPIO_WritePin(SPI_CLK_GPIO_Port, SPI_CLK_Pin, GPIO_PIN_RESET);
 	  	//HAL_Delay(1);
 	  	//digitalWrite(_clockpin, INVERTED_LOW);
-	  	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
+	  	HAL_GPIO_WritePin(SPI_CLK_GPIO_Port, SPI_CLK_Pin, GPIO_PIN_SET);
 	  	//HAL_Delay(1);
 	adcout <<= 1;
 	//if (!digitalRead(_misopin)) {
-	if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_7)) {
+	if (!HAL_GPIO_ReadPin(SPI_MISO_GPIO_Port, SPI_MISO_Pin)) {
 	  adcout |= 0x1;
 	}
   }
   //digitalWrite(_cspin, INVERTED_HIGH);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
 
   adcout >>= 1; //      # first bit is 'null' so drop it
   return adcout;

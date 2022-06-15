@@ -27,15 +27,7 @@
 class MCP3002
 {
   public:
-	MCP3002(){};
-    MCP3002(GPIO_TypeDef* a_miso_gpio_bank,
-    		const uint16_t a_miso_gpio,
-    		GPIO_TypeDef* a_mosi_gpio_bank,
-    		const uint16_t a_mosi_gpio,
-			GPIO_TypeDef* a_clk_bank,
-			const uint16_t a_clk_gpio,
-			GPIO_TypeDef* a_cs_gpio_bank,
-			const uint16_t a_cs_gpio);
+    MCP3002();
     int readADC(int adcnum);
     int readCurrent(int adcnum);
   private:
