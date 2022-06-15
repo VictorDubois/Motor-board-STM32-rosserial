@@ -128,12 +128,16 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.subscribe(motors_cmd_sub);
 
 	HAL_Delay(100);
+	int reinit = 1;
 	while (!nh.connected())
 	{
 	    nh.spinOnce();
+		if (HAL_GetTick()/1000 > reinit){
+			MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
+			reinit++;
+		}
 	    HAL_Delay(MS_BETWEEN_UPDATES);
 	}
-	nh.negotiateTopics();
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}
