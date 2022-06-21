@@ -17,6 +17,11 @@ ros::Subscriber<krabi_msgs::motors_cmd> motors_cmd_sub("motors_cmd", motors_cmd_
 
 void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 {
+	if (motors_cmd_msg.reset_encoders)
+	{
+		MotorBoard::set_odom(0, 0, 0);
+	}
+
 	if (!motors_cmd_msg.enable_motors) {
 		MotorBoard::getDCMotor().resetMotors();
 		return;
