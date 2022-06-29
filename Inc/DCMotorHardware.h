@@ -38,6 +38,12 @@ public:
 	 * @param pwm_right the pwm intensity for motor right
 	 */
 	void setPWM(int32_t pwm_left, int32_t pwm_right);
+
+	/**
+	 * @brief returns the number of milliseconds elapsed since boot
+	 */
+	uint32_t getMilliSecondsElapsed();
+
 private:
 	GPIO_TypeDef* dir_right_gpio_bank;
 	uint16_t dir_right_gpio;

@@ -149,6 +149,8 @@ private:
 	void get_speed();
 	void control_ramp_speed(void);
 
+	void overCurrentProtection();
+
 
 	int dir[NB_MOTORS];
 

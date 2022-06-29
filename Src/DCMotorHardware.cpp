@@ -40,6 +40,10 @@ uint32_t DCMotorHardware::getTicks(const uint32_t encoderId) {
 	return encoder_right_timer->CNT;
 }
 
+uint32_t DCMotorHardware::getMilliSecondsElapsed() {
+	return HAL_GetTick();
+}
+
 void DCMotorHardware::setPWM(const int32_t pwm_left, const int32_t pwm_right) {
 	// Write dir according to pwm sign
 	if (pwm_left > 0) {

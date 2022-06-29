@@ -18,16 +18,13 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	pid_d = 0.0197;
 
 	override_pwm = false;
+	stopped_timeout = 0;
 
 	for (int i = 0; i< NB_MOTORS; i++) {
 		last_position[i] = 0;
 		current[i] = 0;
 		accumulated_current[i] = 0;
 		speed[i] = 0;
-	}
-
-	stopped_timeout = 0;
-	for (int i = 0; i< NB_MOTORS; i++) {
 		dir[i] = 0;
 		speed_integ_error[i] = 0;
 		voltage[i] = 0;
@@ -39,7 +36,6 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		override_pwms[i] = 0;
 	}
 
-	stopped_timeout = 0;
 }
 
 void DCMotor::override_PWM(int pwm_left, int pwm_right)
@@ -47,6 +43,13 @@ void DCMotor::override_PWM(int pwm_left, int pwm_right)
 	override_pwm = true;
 	override_pwms[M_L] = pwm_left;
 	override_pwms[M_R] = pwm_right;
+
+	// Reset overCurrentProtection
+	// It should reenable itself if needed
+	stopped_timeout = hardware->getMilliSecondsElapsed();
+	for (int i = 0; i< NB_MOTORS; i++) {
+		stopped_timeouts[i] = hardware->getMilliSecondsElapsed();
+	}
 }
 
 void DCMotor::stop_pwm_override()
@@ -54,6 +57,13 @@ void DCMotor::stop_pwm_override()
 	if (override_pwm) {
 		// Reset asserv that probably diverged during override
 		resetMotors();
+
+		// Reset overCurrentProtection
+		// It should reenable itself if needed
+		stopped_timeout = hardware->getMilliSecondsElapsed();
+		for (int i = 0; i< NB_MOTORS; i++) {
+			stopped_timeouts[i] = hardware->getMilliSecondsElapsed();
+		}
 	}
 
 	override_pwm = false;
@@ -81,17 +91,39 @@ DCMotor::DCMotor() {}
 
 DCMotor::~DCMotor() {}
 
+void DCMotor::overCurrentProtection() {
+	for(int i = 0; i < NB_MOTORS; i++){
+		current[i] = current_reader->readCurrent(i);
+		if (current[i] == CURRENT_READER_OFFLINE) {
+			stopped_timeout = hardware->getMilliSecondsElapsed() + 3000;
+		}
+
+		constexpr uint8_t current_averaging_period = 20;// measure over 20 iterations
+		constexpr float current_averaging_factor = 1.f - (1.f/current_averaging_period);
+
+		accumulated_current[i] = current_averaging_factor * accumulated_current[i] + current[i];
+
+		if (accumulated_current[i] > max_current * current_averaging_period) {
+			stopped_timeout = hardware->getMilliSecondsElapsed() + 3000;
+		}
+
+		if (accumulated_current[i] > max_currents[i] * current_averaging_period) {
+			stopped_timeouts[i] = hardware->getMilliSecondsElapsed() + 1000;
+		}
+	}
+}
+
 void DCMotor::update() {
 	get_speed();
 
-	if (stopped_timeout > 0) {
-		stopped_timeout--;
+	overCurrentProtection();
+
+	if (stopped_timeout > hardware->getMilliSecondsElapsed()) {
 		resetMotors();
 	}
 	else {
 		for(int i = 0; i < NB_MOTORS; i++){
-			if (stopped_timeouts[i] > 0){
-				stopped_timeouts[i]--;
+			if (stopped_timeouts[i] > hardware->getMilliSecondsElapsed()){
 				resetMotor(i);
 				override_pwms[i] = 0;
 			}
@@ -106,26 +138,6 @@ void DCMotor::update() {
 		}
 		else {
 			hardware->setPWM(voltage[M_L], voltage[M_R]);
-		}
-	}
-
-	for(int i = 0; i < NB_MOTORS; i++){
-		current[i] = current_reader->readCurrent(i);
-		if (current[i] == CURRENT_READER_OFFLINE) {
-			stopped_timeout = 300;
-		}
-
-		constexpr uint8_t current_averaging_period = 20;// measure over 20 iterations
-		constexpr float current_averaging_factor = 1.f - (1.f/current_averaging_period);
-
-		accumulated_current[i] = current_averaging_factor * accumulated_current[i] + current[i];
-
-		if (accumulated_current[i] > max_current * current_averaging_period) {
-			stopped_timeout = 300;
-		}
-
-		if (accumulated_current[i] > max_currents[i] * current_averaging_period) {
-			stopped_timeouts[i] = 100;
 		}
 	}
 }
