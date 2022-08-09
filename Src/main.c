@@ -139,14 +139,6 @@ int main(void)
   MX_TIM15_Init();
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
-  int toto_switch = 0;
-
-
-  volatile uint32_t encoderLeft = 1;
-  volatile uint32_t encoderRight = 2;
-  volatile uint16_t TIM3CNT = 3;
-  volatile uint16_t TIM8CNT = 4;
-  volatile uint16_t TIM4CNT = 5;
 
   //HAL_TIM_PWM_MspInit(&htim8);
   //HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_2);
@@ -174,22 +166,7 @@ int main(void)
   {
 	  loop(&htim3, &htim15);
 	  continue;
-	  // Tests
-	  toto_switch = 1-toto_switch;
-	  if (toto_switch) {
-	  		//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0x0);
-	  		//__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0x0);
-	  		HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);//DIR_A
-	  		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET);//DIR_B
-	  	}
-	  	else {
-	  		HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_SET);//DIR_A
-	  		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET);//DIR_B
-	  		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0xF);
-	  		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0xF);
-	  	}
-	  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);//un-BRAKE
-	  continue;
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

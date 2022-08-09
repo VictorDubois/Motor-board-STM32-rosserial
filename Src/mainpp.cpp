@@ -40,7 +40,9 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 void set_odom_alone_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
 {
 	MotorBoard::set_odom(req.x, req.y, req.theta);
+	res.success = true;
 }
+
 ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);
 
 void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
@@ -125,7 +127,6 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	//nh.advertise(odom_pub);
 	nh.advertise(asserv_pub);
 	nh.advertise(odom_light_pub);
-	//nh.advertise(chatter);
 	//nh.advertise(encoders_pub);
 	//nh.advertise(motors_pub);
 	nh.subscribe(twist_sub);
@@ -133,8 +134,10 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.subscribe(enable_sub);
 	nh.subscribe(motors_cmd_sub);
 
+	nh.advertiseService(set_odom_srv);
+
 	HAL_Delay(100);
-	int reinit = 1;
+	uint8_t reinit = 1;
 	while (!nh.connected())
 	{
 	    nh.spinOnce();
@@ -325,7 +328,6 @@ void MotorBoard::update() {
 	//motors_pub.publish(&motors_msg);
 
 	str_msg.data = "Hello world!";
-	//chatter.publish(&str_msg);
 	nh.spinOnce();
 }
 
@@ -346,38 +348,27 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
-	uint32_t before = HAL_GetTick();
-	uint32_t after = HAL_GetTick();
 	int32_t waiting_time = 2;
 	while(true) {
-		//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_3);
-		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-		before = HAL_GetTick();
 		myboard.update();
 
 		for(int ii = 0; ii< 10 ; ii++){
-			//nh.spinOnce();
 			myboard.update_inputs();
+
+
+			// Debug messages
+			/*
 			int32_t right_speed = MotorBoard::getDCMotor().get_speed(M_R);
 			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
 			float current_speed = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 			asserv_msg.max_current = current_speed;
 			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_error(M_R))/5000;
-			//asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
+			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
 
-			//asserv_pub.publish(&asserv_msg);
+			asserv_pub.publish(&asserv_msg);
+			*/
 
-			// Maintain Loop @100Hz
-			// subtle: the measure is only at the millisecond level
-			// A basic before/after returns almost always 0, instead of 0.9ms
-			/*after = HAL_GetTick();
-			waiting_time = 10 - (after - (before + ii*10));
-			if (waiting_time < 0 || waiting_time > 10)
-			{
-				waiting_time = 10;
-			}
 
-			HAL_Delay(waiting_time);*/
 			HAL_Delay(waiting_time);
 		}
 	}
