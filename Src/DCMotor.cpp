@@ -7,6 +7,16 @@
 
 #include "DCMotor.h"
 
+template <class T>
+T get_linear(T* array) {
+	return (array[M_L] + array[M_R])/2;
+}
+
+template <class T>
+T get_angular(T* array) {
+	return (array[M_L] - array[M_R])/2;
+}
+
 DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
 	resetMotors();
 	max_speed = SPEED_MAX;
@@ -28,7 +38,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		dir[i] = 0;
 		speed_integ_error[i] = 0;
 		voltage[i] = 0;
-		speed_command[i] = 0;
+		refined_speed_order[i] = 0;
 		speed_order[i] = 0;
 		stopped_timeouts[i] = 0;
 		speed_error[i] = 0;
@@ -36,6 +46,18 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		override_pwms[i] = 0;
 	}
 
+	linear_speed_order = 0;
+	angular_speed_order = 0;
+	linear_refined_speed_order = 0;
+	angular_refined_speed_order = 0;
+	linear_speed_error = 0;
+	angular_speed_error = 0;
+	linear_last_speed_error = 0;
+	angular_last_speed_error = 0;
+	linear_speed = 0;
+	angular_speed = 0;
+	linear_speed_integ_error = 0;
+	angular_speed_integ_error = 0;
 }
 
 void DCMotor::override_PWM(int pwm_left, int pwm_right)
@@ -73,10 +95,23 @@ void DCMotor::resetMotor(int motor_id) {
 	dir[motor_id] = 0;
 	speed_integ_error[motor_id] = 0;
 	voltage[motor_id] = 0;
-	speed_command[motor_id] = 0;
+	refined_speed_order[motor_id] = 0;
 	speed_order[motor_id] = 0;
 	speed_error[motor_id] = 0;
 	override_pwms[motor_id] = 0;
+
+	linear_speed_order = 0;
+	angular_speed_order = 0;
+	linear_refined_speed_order = 0;
+	angular_refined_speed_order = 0;
+	linear_speed_error = 0;
+	angular_speed_error = 0;
+	linear_last_speed_error = 0;
+	angular_last_speed_error = 0;
+	linear_speed = 0;
+	angular_speed = 0;
+	linear_speed_integ_error = 0;
+	angular_speed_integ_error = 0;
 }
 
 void DCMotor::resetMotors() {
@@ -128,7 +163,8 @@ void DCMotor::update() {
 				override_pwms[i] = 0;
 			}
 		}
-		control_ramp_speed();
+		//control_ramp_speed();
+		control_ramp_speed_polar();
 
 		//hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv
 
@@ -160,7 +196,12 @@ void DCMotor::get_speed(){
 
         speed[i] = current_speed * SAMPLING_PER_SEC;// ticks per second
     }
+
+    linear_speed = get_linear(speed);
+    angular_speed = get_angular(speed);
 }
+
+
 
 int32_t DCMotor::get_speed(uint8_t motor_id) {
 	return speed[motor_id];
@@ -182,18 +223,74 @@ void DCMotor::set_speed_order(float lin, float rot) {
 	constexpr int32_t meters_to_tick = 4096/(M_PI * 0.068);
 	constexpr int32_t rad_to_tick = meters_to_tick*(0.25 /2);
 
-	int32_t linear_speed = meters_to_tick * lin;// = resolution/perimeter = 4096/(pi*68mm) to convert from m/s => 19172
-	int32_t rotational_speed_order = rad_to_tick * rot;// = radius when turning on the spot (=half entraxe) / speed in m/s = (250mm/2) * 19172 to convert from rad/s => 2396
+	linear_speed_order = meters_to_tick * lin;// = resolution/perimeter = 4096/(pi*68mm) to convert from m/s => 19172
+	angular_speed_order = rad_to_tick * rot;// = radius when turning on the spot (=half entraxe) / speed in m/s = (250mm/2) * 19172 to convert from rad/s => 2396
 
-	int32_t left_speed_order = linear_speed+rotational_speed_order;
+	int32_t left_speed_order = linear_speed_order + angular_speed_order;
 	left_speed_order = MIN(left_speed_order, max_speed);
 	left_speed_order = MAX(left_speed_order, -max_speed);
 	speed_order[M_L] = left_speed_order;
 
-	int32_t right_speed_order = linear_speed-rotational_speed_order;
+	int32_t right_speed_order = linear_speed_order - angular_speed_order;
 	right_speed_order = MIN(right_speed_order, max_speed);
 	right_speed_order = MAX(right_speed_order, -max_speed);
 	speed_order[M_R] = right_speed_order;
+}
+
+void DCMotor::control_ramp_speed_polar(void) {
+	float linear_pid_p = 0;
+	float linear_pid_i = 0;
+	float linear_pid_d = 0;
+	float angular_pid_p = 0;
+	float angular_pid_i = 0;
+	float angular_pid_d = 0;
+	if( (int32_t)(linear_speed_order) - linear_speed >= max_speed_delta) {
+		linear_refined_speed_order = linear_speed+max_speed_delta;
+	}
+	else if ( (int32_t)(linear_speed_order) - linear_speed <= -max_speed_delta ) {
+		linear_refined_speed_order = linear_speed-max_speed_delta;
+	}
+	else {
+		linear_refined_speed_order = linear_speed;
+	}
+
+	linear_speed_error = linear_refined_speed_order - linear_speed;
+	linear_speed_integ_error += linear_speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
+
+	int32_t linear_voltage =
+		 (linear_pid_p*linear_speed_error +
+				 linear_pid_i*linear_speed_integ_error + linear_pid_d * (linear_speed_error - linear_last_speed_error));
+
+	linear_last_speed_error = linear_speed_error;
+
+
+	if( (int32_t)(angular_speed_order) - angular_speed >= max_speed_delta) {
+		angular_refined_speed_order = angular_speed+max_speed_delta;
+	}
+	else if ( (int32_t)(angular_speed_order) - angular_speed <= -max_speed_delta ) {
+		angular_refined_speed_order = angular_speed-max_speed_delta;
+	}
+	else {
+		angular_refined_speed_order = angular_speed;
+	}
+
+	angular_speed_error = angular_refined_speed_order - angular_speed;
+	angular_speed_integ_error += angular_speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
+
+	int32_t angular_voltage =
+		 (angular_pid_p*angular_speed_error +
+				 angular_pid_i*angular_speed_integ_error + angular_pid_d * (angular_speed_error - angular_last_speed_error));
+
+	angular_last_speed_error = angular_speed_error;
+
+
+	voltage[M_L] = linear_voltage + angular_voltage;
+	voltage[M_R] = linear_voltage - angular_voltage;
+
+	for(int i = 0; i < NB_MOTORS; i++){
+		voltage[i] = MIN(voltage[i], DUTYMAX);
+		voltage[i] = MAX(voltage[i], -DUTYMAX);
+	}
 }
 
 void DCMotor::control_ramp_speed(void) {
@@ -201,16 +298,16 @@ void DCMotor::control_ramp_speed(void) {
 
     for(int i = 0; i < NB_MOTORS; i++){
         if( (int32_t)(speed_order[i]) - speed[i] >= max_speed_delta) {
-        	speed_command[i] = speed[i]+max_speed_delta;
+        	refined_speed_order[i] = speed[i]+max_speed_delta;
         }
         else if ( (int32_t)(speed_order[i]) - speed[i] <= -max_speed_delta ) {
-        	speed_command[i] = speed[i]-max_speed_delta;
+        	refined_speed_order[i] = speed[i]-max_speed_delta;
         }
         else {
-        	speed_command[i] = speed_order[i];
+        	refined_speed_order[i] = speed_order[i];
         }
 
-        speed_error[i] = speed_command[i] - speed[i];
+        speed_error[i] = refined_speed_order[i] - speed[i];
         speed_integ_error[i] += speed_error[i]; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
         voltage[i] =

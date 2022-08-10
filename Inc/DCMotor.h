@@ -148,6 +148,8 @@ private:
 
 	void get_speed();
 	void control_ramp_speed(void);
+	void control_ramp_speed_polar(void);
+
 
 	void overCurrentProtection();
 
@@ -169,7 +171,7 @@ private:
 	volatile int32_t stopped_timeout;
 	volatile int32_t stopped_timeouts[NB_MOTORS];
 
-	int32_t speed_command[NB_MOTORS];
+	int32_t refined_speed_order[NB_MOTORS];
 
 	int32_t max_speed;
 	int32_t max_speed_delta;
@@ -182,6 +184,20 @@ private:
 
 	bool override_pwm;
 	int override_pwms[NB_MOTORS];
+
+
+	int32_t linear_speed_order;
+	int32_t angular_speed_order;
+	int32_t linear_refined_speed_order;
+	int32_t angular_refined_speed_order;
+	int32_t linear_speed_error;
+	int32_t angular_speed_error;
+	int32_t linear_last_speed_error;
+	int32_t angular_last_speed_error;
+	int32_t linear_speed;
+	int32_t angular_speed;
+	int32_t linear_speed_integ_error;
+	int32_t angular_speed_integ_error;
 };
 
 
