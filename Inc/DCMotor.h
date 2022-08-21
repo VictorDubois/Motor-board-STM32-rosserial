@@ -96,7 +96,6 @@ public:
 	void resetMotor(int motor_id);
 
 	int32_t get_voltage(int8_t a_motor_id);
-	int32_t get_error(int8_t a_motor_id);
 
 	/**
 	 * @brief setter for the max speed (per motor)
@@ -139,6 +138,8 @@ public:
 
 	void override_PWM(int pwm_left, int pwm_right);
 	void stop_pwm_override();
+
+	void set_enable_motors(bool a_enable_motors);
 private:
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -158,7 +159,7 @@ private:
 
 	volatile int32_t speed[NB_MOTORS];// samples to average
 
-	volatile int32_t speed_error[NB_MOTORS];// samples to integrate
+	//volatile int32_t speed_error[NB_MOTORS];// samples to integrate
 	volatile int32_t last_speed_error[NB_MOTORS];// samples to integrate
 
 	volatile int32_t speed_integ_error[NB_MOTORS];
@@ -185,13 +186,13 @@ private:
 	bool override_pwm;
 	int override_pwms[NB_MOTORS];
 
+	bool m_enable_motors;
+
 
 	int32_t linear_speed_order;
 	int32_t angular_speed_order;
 	int32_t linear_refined_speed_order;
 	int32_t angular_refined_speed_order;
-	int32_t linear_speed_error;
-	int32_t angular_speed_error;
 	int32_t linear_last_speed_error;
 	int32_t angular_last_speed_error;
 	int32_t linear_speed;

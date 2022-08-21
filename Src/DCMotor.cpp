@@ -41,7 +41,6 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		refined_speed_order[i] = 0;
 		speed_order[i] = 0;
 		stopped_timeouts[i] = 0;
-		speed_error[i] = 0;
 		last_speed_error[i] = 0;
 		override_pwms[i] = 0;
 	}
@@ -50,14 +49,14 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	angular_speed_order = 0;
 	linear_refined_speed_order = 0;
 	angular_refined_speed_order = 0;
-	linear_speed_error = 0;
-	angular_speed_error = 0;
 	linear_last_speed_error = 0;
 	angular_last_speed_error = 0;
 	linear_speed = 0;
 	angular_speed = 0;
 	linear_speed_integ_error = 0;
 	angular_speed_integ_error = 0;
+
+	m_enable_motors = false;
 }
 
 void DCMotor::override_PWM(int pwm_left, int pwm_right)
@@ -97,15 +96,12 @@ void DCMotor::resetMotor(int motor_id) {
 	voltage[motor_id] = 0;
 	refined_speed_order[motor_id] = 0;
 	speed_order[motor_id] = 0;
-	speed_error[motor_id] = 0;
 	override_pwms[motor_id] = 0;
 
 	linear_speed_order = 0;
 	angular_speed_order = 0;
 	linear_refined_speed_order = 0;
 	angular_refined_speed_order = 0;
-	linear_speed_error = 0;
-	angular_speed_error = 0;
 	linear_last_speed_error = 0;
 	angular_last_speed_error = 0;
 	linear_speed = 0;
@@ -166,7 +162,10 @@ void DCMotor::update() {
 		//control_ramp_speed();
 		control_ramp_speed_polar();
 
-		//hardware->setPWM(speed_order[M_L], speed_order[M_R]);// no asserv
+		if (!m_enable_motors) {
+			hardware->setPWM(0, 0);
+			return;
+		}
 
 		if (override_pwm)
 		{
@@ -254,7 +253,7 @@ void DCMotor::control_ramp_speed_polar(void) {
 		linear_refined_speed_order = linear_speed;
 	}
 
-	linear_speed_error = linear_refined_speed_order - linear_speed;
+	volatile int32_t linear_speed_error = linear_refined_speed_order - linear_speed;
 	linear_speed_integ_error += linear_speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
 	int32_t linear_voltage =
@@ -274,7 +273,7 @@ void DCMotor::control_ramp_speed_polar(void) {
 		angular_refined_speed_order = angular_speed;
 	}
 
-	angular_speed_error = angular_refined_speed_order - angular_speed;
+	volatile int32_t angular_speed_error = angular_refined_speed_order - angular_speed;
 	angular_speed_integ_error += angular_speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
 	int32_t angular_voltage =
@@ -307,14 +306,14 @@ void DCMotor::control_ramp_speed(void) {
         	refined_speed_order[i] = speed_order[i];
         }
 
-        speed_error[i] = refined_speed_order[i] - speed[i];
-        speed_integ_error[i] += speed_error[i]; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
+        volatile int32_t speed_error = refined_speed_order[i] - speed[i];
+        speed_integ_error[i] += speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
         voltage[i] =
-             (pid_p*speed_error[i] +
-             pid_i*speed_integ_error[i] + pid_d * (speed_error[i] - last_speed_error[i]));
+             (pid_p*speed_error +
+             pid_i*speed_integ_error[i] + pid_d * (speed_error - last_speed_error[i]));
 
-        last_speed_error[i] = speed_error[i];
+        last_speed_error[i] = speed_error;
 
         voltage[i] = MIN(voltage[i], DUTYMAX);
         voltage[i] = MAX(voltage[i], -DUTYMAX);
@@ -324,11 +323,6 @@ void DCMotor::control_ramp_speed(void) {
 int32_t DCMotor::get_voltage(int8_t a_motor_id)
 {
 	return voltage[a_motor_id];
-}
-
-int32_t DCMotor::get_error(int8_t a_motor_id)
-{
-	return speed_error[a_motor_id];
 }
 
 void DCMotor::set_max_speed(int32_t a_max_speed)
@@ -365,4 +359,14 @@ void DCMotor::set_max_current(float a_max_current_left, float a_max_current_righ
 {
 	max_currents[M_L] = a_max_current_left * ONE_AMP;
 	max_currents[M_R] = a_max_current_right * ONE_AMP;
+}
+
+void DCMotor::set_enable_motors(bool a_enable_motors)
+{
+	m_enable_motors = a_enable_motors;
+
+	if (!m_enable_motors)
+	{
+		resetMotors();
+	}
 }

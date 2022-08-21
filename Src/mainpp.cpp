@@ -22,6 +22,8 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 		MotorBoard::set_odom(0, 0, 0);
 	}
 
+	MotorBoard::getDCMotor().set_enable_motors(motors_cmd_msg.enable_motors);
+
 	if (!motors_cmd_msg.enable_motors) {
 		MotorBoard::getDCMotor().resetMotors();
 		return;
