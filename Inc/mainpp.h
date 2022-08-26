@@ -32,7 +32,7 @@ krabi_msgs::motors_parameters asserv_msg;
 krabi_msgs::odom_light odom_light_msg;
 krabi_msgs::odom_lighter odom_lighter_msg;
 ros::Publisher encoders_pub("encoders", &encoders_msg);
-//ros::Publisher motors_pub("motors", &motors_msg);
+ros::Publisher motors_pub("motors", &motors_msg);
 ros::Publisher odom_light_pub("odom_light", &odom_light_msg);
 ros::Publisher odom_lighter_pub("odom_lighter", &odom_lighter_msg);
 

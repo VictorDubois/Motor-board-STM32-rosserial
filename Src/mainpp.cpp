@@ -131,7 +131,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.advertise(odom_light_pub);
 	nh.advertise(odom_lighter_pub);
 	nh.advertise(encoders_pub);
-	//nh.advertise(motors_pub);
+	nh.advertise(motors_pub);
 	nh.subscribe(twist_sub);
 	nh.subscribe(parameters_sub);
 	nh.subscribe(enable_sub);
@@ -304,7 +304,7 @@ void MotorBoard::update() {
 	odom_lighter_msg.header.frame_id = "";
 	odom_lighter_msg.poseX = X;
 	odom_lighter_msg.poseY = Y;
-	odom_lighter_msg.angleRz = tf::createQuaternionFromYaw(current_theta_rad);;
+	odom_lighter_msg.angleRz = current_theta_rad;
 	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 	odom_lighter_msg.speedWz = ticksToMillimeters((left_speed-right_speed)/2)/1000.f; // C'est complètement faux, non ?
 	odom_lighter_pub.publish(&odom_lighter_msg);
