@@ -140,6 +140,10 @@ public:
 	void stop_pwm_override();
 
 	void set_enable_motors(bool a_enable_motors);
+
+
+	int32_t get_linear_speed_order() {return linear_speed_order;}
+	int32_t get_angular_speed_order() {return angular_speed_order;}
 private:
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
@@ -197,8 +201,10 @@ private:
 	int32_t angular_last_speed_error;
 	int32_t linear_speed;
 	int32_t angular_speed;
-	int32_t linear_speed_integ_error;
-	int32_t angular_speed_integ_error;
+	float linear_speed_integ_error;
+	float angular_speed_integ_error;
+
+	volatile int32_t last_update_time;
 };
 
 

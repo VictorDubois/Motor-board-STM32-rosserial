@@ -27,6 +27,8 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	pid_i = 0.00625;
 	pid_d = 0.0197;
 
+	last_update_time = HAL_GetTick();
+
 	override_pwm = false;
 	stopped_timeout = 0;
 
@@ -108,6 +110,8 @@ void DCMotor::resetMotor(int motor_id) {
 	angular_speed = 0;
 	linear_speed_integ_error = 0;
 	angular_speed_integ_error = 0;
+
+	last_update_time = HAL_GetTick();
 }
 
 void DCMotor::resetMotors() {
@@ -151,29 +155,29 @@ void DCMotor::update() {
 
 	if (stopped_timeout > hardware->getMilliSecondsElapsed()) {
 		resetMotors();
+		return;
+	}
+
+	for(int i = 0; i < NB_MOTORS; i++){
+		if (stopped_timeouts[i] > hardware->getMilliSecondsElapsed()){
+			resetMotor(i);
+			override_pwms[i] = 0;
+		}
+	}
+	//control_ramp_speed();
+	control_ramp_speed_polar();
+
+	if (!m_enable_motors) {
+		hardware->setPWM(0, 0);
+		return;
+	}
+
+	if (override_pwm)
+	{
+		hardware->setPWM(override_pwms[M_L], override_pwms[M_R]);
 	}
 	else {
-		for(int i = 0; i < NB_MOTORS; i++){
-			if (stopped_timeouts[i] > hardware->getMilliSecondsElapsed()){
-				resetMotor(i);
-				override_pwms[i] = 0;
-			}
-		}
-		//control_ramp_speed();
-		control_ramp_speed_polar();
-
-		if (!m_enable_motors) {
-			hardware->setPWM(0, 0);
-			return;
-		}
-
-		if (override_pwm)
-		{
-			hardware->setPWM(override_pwms[M_L], override_pwms[M_R]);
-		}
-		else {
-			hardware->setPWM(voltage[M_L], voltage[M_R]);
-		}
+		hardware->setPWM(voltage[M_L], voltage[M_R]);
 	}
 }
 
@@ -237,12 +241,19 @@ void DCMotor::set_speed_order(float lin, float rot) {
 }
 
 void DCMotor::control_ramp_speed_polar(void) {
-	float linear_pid_p = 0;
-	float linear_pid_i = 0;
-	float linear_pid_d = 0;
-	float angular_pid_p = 0;
-	float angular_pid_i = 0;
-	float angular_pid_d = 0;
+	// Ziegler Nichols: Ku = 0.1, Tu = 0.0844
+	float linear_pid_p = 0.06f;//0.38;//0.5 => explose. 0.1, 0.2 => marche.0.35, 0.38 => marche avec légère oscillation.0.4 oscille
+	float linear_pid_i = 1.421800948f;
+	float linear_pid_d = 0.000633f;
+
+
+	// Ziegler Nichols: Ku = 0.15, Tu = 0.10855
+	//0.1 => oscille beaucoup mais lin actif. 0.01 => ne bouge pas 0.03 lent. 0.09 marche, oscill un peu. 0.15 marche bien :)
+
+	float angular_pid_p = 0.09f;
+	float angular_pid_i = 1.105481345f;
+	float angular_pid_d = 0.000814125f;
+
 	if( (int32_t)(linear_speed_order) - linear_speed >= max_speed_delta) {
 		linear_refined_speed_order = linear_speed+max_speed_delta;
 	}
@@ -254,14 +265,19 @@ void DCMotor::control_ramp_speed_polar(void) {
 	}
 
 	volatile int32_t linear_speed_error = linear_refined_speed_order - linear_speed;
-	linear_speed_integ_error += linear_speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
+
+	auto current_time = HAL_GetTick();
+	auto dt = (current_time - last_update_time)/1000.f;
+	last_update_time = current_time;
+
+	linear_speed_integ_error += linear_speed_error * dt; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
+
 
 	int32_t linear_voltage =
 		 (linear_pid_p*linear_speed_error +
-				 linear_pid_i*linear_speed_integ_error + linear_pid_d * (linear_speed_error - linear_last_speed_error));
+				 linear_pid_i*linear_speed_integ_error + linear_pid_d * (linear_speed_error - linear_last_speed_error)/dt);
 
 	linear_last_speed_error = linear_speed_error;
-
 
 	if( (int32_t)(angular_speed_order) - angular_speed >= max_speed_delta) {
 		angular_refined_speed_order = angular_speed+max_speed_delta;
@@ -274,11 +290,11 @@ void DCMotor::control_ramp_speed_polar(void) {
 	}
 
 	volatile int32_t angular_speed_error = angular_refined_speed_order - angular_speed;
-	angular_speed_integ_error += angular_speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
+	angular_speed_integ_error += angular_speed_error* dt; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
 	int32_t angular_voltage =
 		 (angular_pid_p*angular_speed_error +
-				 angular_pid_i*angular_speed_integ_error + angular_pid_d * (angular_speed_error - angular_last_speed_error));
+				 angular_pid_i*angular_speed_integ_error + angular_pid_d * (angular_speed_error - angular_last_speed_error)/dt);
 
 	angular_last_speed_error = angular_speed_error;
 
