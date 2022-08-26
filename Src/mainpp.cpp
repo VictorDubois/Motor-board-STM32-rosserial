@@ -129,6 +129,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	//nh.advertise(odom_pub);
 	nh.advertise(asserv_pub);
 	nh.advertise(odom_light_pub);
+	nh.advertise(odom_lighter_pub);
 	nh.advertise(encoders_pub);
 	//nh.advertise(motors_pub);
 	nh.subscribe(twist_sub);
@@ -298,44 +299,55 @@ void MotorBoard::update() {
 	odom_msg.twist.twist.angular.z = odometry->getAngularSpeed();
 	odom_pub.publish(&odom_msg);*/
 
+	odom_lighter_msg.header.stamp = nh.now();
+	odom_lighter_msg.header.seq = message_counter++;
+	odom_lighter_msg.header.frame_id = "";
+	odom_lighter_msg.poseX = X;
+	odom_lighter_msg.poseY = Y;
+	odom_lighter_msg.angleRz = tf::createQuaternionFromYaw(current_theta_rad);;
+	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+	odom_lighter_msg.speedWz = ticksToMillimeters((left_speed-right_speed)/2)/1000.f; // C'est complètement faux, non ?
+	odom_lighter_pub.publish(&odom_lighter_msg);
 
-	odom_light_msg.header.stamp = nh.now();
-	odom_light_msg.header.seq = message_counter++;
-	odom_light_msg.header.frame_id = "odom_light_coucou";
-	odom_light_msg.pose.position.x = X;
-	odom_light_msg.pose.position.y = Y;
-	odom_light_msg.pose.position.z = 0;
+	if (message_counter%100 == 0)
+	{
+		odom_light_msg.header.stamp = nh.now();
+		odom_light_msg.header.seq = message_counter++;
+		odom_light_msg.header.frame_id = "odom_light_newer";
+		odom_light_msg.pose.position.x = X;
+		odom_light_msg.pose.position.y = Y;
+		odom_light_msg.pose.position.z = 0;
 
-	odom_light_msg.pose.orientation = tf::createQuaternionFromYaw(current_theta_rad);
+		odom_light_msg.pose.orientation = tf::createQuaternionFromYaw(current_theta_rad);
 
-	odom_light_msg.speed.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-	odom_light_msg.speed.linear.y = ticksToMillimeters(MotorBoard::getDCMotor().get_linear_speed_order())/1000.f;
-	odom_light_msg.speed.linear.z = ticksToMillimeters(MotorBoard::getDCMotor().get_angular_speed_order())/1000.f;
+		odom_light_msg.speed.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+		odom_light_msg.speed.linear.y = ticksToMillimeters(MotorBoard::getDCMotor().get_linear_speed_order())/1000.f;
+		odom_light_msg.speed.linear.z = ticksToMillimeters(MotorBoard::getDCMotor().get_angular_speed_order())/1000.f;
 
-	odom_light_msg.speed.angular.x = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_L));
-	odom_light_msg.speed.angular.y = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_R));
-	odom_light_msg.speed.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f;
-	odom_light_msg.current_motor_left = motors.get_accumulated_current(M_L);
-	odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
+		odom_light_msg.speed.angular.x = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_L));
+		odom_light_msg.speed.angular.y = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_R));
+		odom_light_msg.speed.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f; // C'est complètement faux, non ?
+		odom_light_msg.current_motor_left = motors.get_accumulated_current(M_L);
+		odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
 
 
-	odom_light_pub.publish(&odom_light_msg);
+		odom_light_pub.publish(&odom_light_msg);
 
-	motors_msg.current_left = motors.get_current(M_L);
-	motors_msg.current_right = motors.get_current(M_R);
+		motors_msg.current_left = motors.get_current(M_L);
+		motors_msg.current_right = motors.get_current(M_R);
 
-	motors_msg.current_left_accumulated = motors.get_accumulated_current(M_L);
-	motors_msg.current_right_accumulated = motors.get_accumulated_current(M_R);
+		motors_msg.current_left_accumulated = motors.get_accumulated_current(M_L);
+		motors_msg.current_right_accumulated = motors.get_accumulated_current(M_R);
 
-	//motors_pub.publish(&motors_msg);
+		motors_pub.publish(&motors_msg);
 
-	encoders_msg.encoder_left = encoder_left;
-	encoders_msg.encoder_left = encoder_right;
-	encoders_msg.header.stamp = nh.now();
+		encoders_msg.encoder_left = encoder_left;
+		encoders_msg.encoder_left = encoder_right;
+		encoders_msg.header.stamp = nh.now();
 
-	encoders_pub.publish(&encoders_msg);
+		encoders_pub.publish(&encoders_msg);
+	}
 
-	str_msg.data = "Hello world!";
 	nh.spinOnce();
 }
 
@@ -361,7 +373,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 		myboard.update();
 
 		for(int ii = 0; ii< 10 ; ii++){
-			myboard.update_inputs();
+			//myboard.update_inputs();
 
 
 			// Debug messages
@@ -378,7 +390,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 
 
 
-			HAL_Delay(waiting_time);
+			//HAL_Delay(waiting_time);
 		}
 	}
 }
