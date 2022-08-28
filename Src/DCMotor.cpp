@@ -250,9 +250,12 @@ void DCMotor::control_ramp_speed_polar(void) {
 	// Ziegler Nichols: Ku = 0.15, Tu = 0.10855
 	//0.1 => oscille beaucoup mais lin actif. 0.01 => ne bouge pas 0.03 lent. 0.09 marche, oscill un peu. 0.15 marche bien :)
 
-	float angular_pid_p = 0.09f;
+	/*float angular_pid_p = 0.09f;
 	float angular_pid_i = 1.105481345f;
-	float angular_pid_d = 0.000814125f;
+	float angular_pid_d = 0.000814125f;*/
+	float angular_pid_p = 0;
+	float angular_pid_i = 0;
+	float angular_pid_d = 0;
 
 	if( (int32_t)(linear_speed_order) - linear_speed >= max_speed_delta) {
 		linear_refined_speed_order = linear_speed+max_speed_delta;

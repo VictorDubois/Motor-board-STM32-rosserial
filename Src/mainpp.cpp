@@ -249,6 +249,13 @@ void MotorBoard::update() {
 
 	int32_t encoder_left = motors.get_encoder_ticks(M_L);
 	int32_t encoder_right = motors.get_encoder_ticks(M_R);
+
+	encoders_msg.encoder_left = encoder_left;
+	encoders_msg.encoder_left = encoder_right;
+	encoders_msg.header.stamp = nh.now();
+
+	encoders_pub.publish(&encoders_msg);
+
 	int32_t right_speed = motors.get_speed(M_R);
 	int32_t left_speed = motors.get_speed(M_L);
 
@@ -341,11 +348,7 @@ void MotorBoard::update() {
 
 		motors_pub.publish(&motors_msg);
 
-		encoders_msg.encoder_left = encoder_left;
-		encoders_msg.encoder_left = encoder_right;
-		encoders_msg.header.stamp = nh.now();
 
-		encoders_pub.publish(&encoders_msg);
 	}
 
 	nh.spinOnce();
@@ -373,7 +376,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 		myboard.update();
 
 		for(int ii = 0; ii< 10 ; ii++){
-			//myboard.update_inputs();
+			myboard.update_inputs();
 
 
 			// Debug messages
@@ -390,7 +393,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 
 
 
-			//HAL_Delay(waiting_time);
+			HAL_Delay(waiting_time);
 		}
 	}
 }
