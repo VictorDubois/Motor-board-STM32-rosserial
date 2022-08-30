@@ -251,7 +251,7 @@ void MotorBoard::update() {
 	int32_t encoder_right = motors.get_encoder_ticks(M_R);
 
 	encoders_msg.encoder_left = encoder_left;
-	encoders_msg.encoder_left = encoder_right;
+	encoders_msg.encoder_right = encoder_right;
 	encoders_msg.header.stamp = nh.now();
 
 	encoders_pub.publish(&encoders_msg);
