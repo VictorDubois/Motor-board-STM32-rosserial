@@ -264,7 +264,7 @@ void DCMotor::control_ramp_speed_polar(void) {
 		linear_refined_speed_order = linear_speed-max_speed_delta;
 	}
 	else {
-		linear_refined_speed_order = linear_speed;
+		linear_refined_speed_order = linear_speed_order;
 	}
 
 	volatile int32_t linear_speed_error = linear_refined_speed_order - linear_speed;
@@ -289,7 +289,7 @@ void DCMotor::control_ramp_speed_polar(void) {
 		angular_refined_speed_order = angular_speed-max_speed_delta;
 	}
 	else {
-		angular_refined_speed_order = angular_speed;
+		angular_refined_speed_order = angular_speed_order;
 	}
 
 	volatile int32_t angular_speed_error = angular_refined_speed_order - angular_speed;
