@@ -59,6 +59,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 	angular_speed_integ_error = 0;
 
 	m_enable_motors = false;
+	dt=0.42f;
 }
 
 void DCMotor::override_PWM(int pwm_left, int pwm_right)
@@ -204,7 +205,13 @@ void DCMotor::get_speed(){
     angular_speed = get_angular(speed);
 }
 
+int32_t DCMotor::get_linear_error() {
+	return linear_last_speed_error;
+}
 
+float DCMotor::get_linear_error_integ() {
+	return linear_speed_integ_error;
+}
 
 int32_t DCMotor::get_speed(uint8_t motor_id) {
 	return speed[motor_id];
@@ -240,28 +247,44 @@ void DCMotor::set_speed_order(float lin, float rot) {
 	speed_order[M_R] = right_speed_order;
 }
 
+
+
 void DCMotor::control_ramp_speed_polar(void) {
 	// Ziegler Nichols: Ku = 0.1, Tu = 0.0844
-	float linear_pid_p = 0.06f;//0.38;//0.5 => explose. 0.1, 0.2 => marche.0.35, 0.38 => marche avec légère oscillation.0.4 oscille
-	float linear_pid_i = 1.421800948f;
-	float linear_pid_d = 0.000633f;
+	float linear_Ku = 0.085f;//0.1;
+	float linear_Tu = 0.0813f;//0.0844;
+	float linear_pid_p = 0.45f*linear_Ku;//0.06f;//0.38;//0.5 => explose. 0.1, 0.2 => marche.0.35, 0.38 => marche avec légère oscillation.0.4 oscille
+	float linear_pid_i = 0.54f*linear_Ku/linear_Tu;//1.421800948f;
+	float linear_pid_d = 0.075f*linear_Ku*linear_Tu;//0.000633f;
+
+	/*linear_pid_p = 0;//0.085f;//0.06f;//0.38;//0.5 => explose. 0.1, 0.2 => marche.0.35, 0.38 => marche avec légère oscillation.0.4 oscille
+	linear_pid_i = 0;//1.421800948f;
+	linear_pid_d = 0;*/
 
 
 	// Ziegler Nichols: Ku = 0.15, Tu = 0.10855
 	//0.1 => oscille beaucoup mais lin actif. 0.01 => ne bouge pas 0.03 lent. 0.09 marche, oscill un peu. 0.15 marche bien :)
-
 	/*float angular_pid_p = 0.09f;
 	float angular_pid_i = 1.105481345f;
 	float angular_pid_d = 0.000814125f;*/
-	float angular_pid_p = 0;
-	float angular_pid_i = 0;
-	float angular_pid_d = 0;
 
-	if( (int32_t)(linear_speed_order) - linear_speed >= max_speed_delta) {
-		linear_refined_speed_order = linear_speed+max_speed_delta;
+	float angular_Ku = 0.15f;
+	float angular_Tu = 0.10294f;
+	float angular_pid_p = 0.45f*angular_Ku;
+	float angular_pid_i = 0.54f*angular_Ku/angular_Tu;
+	float angular_pid_d = 0.075f*angular_Ku*angular_Tu;
+
+	/*angular_pid_p = 0.2f;
+	angular_pid_i = 0;
+	angular_pid_d = 0;*/
+
+	int32_t linear_max_speed_delta = max_speed_delta;
+
+	if( (int32_t)(linear_speed_order) - linear_speed >= linear_max_speed_delta) {
+		linear_refined_speed_order = linear_speed+linear_max_speed_delta;
 	}
-	else if ( (int32_t)(linear_speed_order) - linear_speed <= -max_speed_delta ) {
-		linear_refined_speed_order = linear_speed-max_speed_delta;
+	else if ( (int32_t)(linear_speed_order) - linear_speed <= -linear_max_speed_delta ) {
+		linear_refined_speed_order = linear_speed-linear_max_speed_delta;
 	}
 	else {
 		linear_refined_speed_order = linear_speed_order;
@@ -269,8 +292,8 @@ void DCMotor::control_ramp_speed_polar(void) {
 
 	volatile int32_t linear_speed_error = linear_refined_speed_order - linear_speed;
 
-	auto current_time = HAL_GetTick(); // in ms
-	auto dt = (current_time - last_update_time)/1000.f; // is seconds
+	uint32_t current_time = HAL_GetTick(); // in ms
+	dt = (current_time - last_update_time)/1000.f; // is seconds
 	last_update_time = current_time;
 
 	linear_speed_integ_error += linear_speed_error * dt; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled

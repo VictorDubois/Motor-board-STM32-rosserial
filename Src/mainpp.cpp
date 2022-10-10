@@ -313,27 +313,27 @@ void MotorBoard::update() {
 	odom_lighter_msg.poseY = Y;
 	odom_lighter_msg.angleRz = current_theta_rad;
 	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-	odom_lighter_msg.speedWz = ticksToMillimeters((left_speed-right_speed)/2)/1000.f; // C'est complètement faux, non ?
+	odom_lighter_msg.speedWz = ((left_speed-right_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
 	odom_lighter_pub.publish(&odom_lighter_msg);
 
-	if (message_counter%100 == 0)
+	if (false && message_counter%100 == 0)
 	{
 		odom_light_msg.header.stamp = nh.now();
 		odom_light_msg.header.seq = message_counter++;
 		odom_light_msg.header.frame_id = "odom_light_newer";
 		odom_light_msg.pose.position.x = X;
 		odom_light_msg.pose.position.y = Y;
-		odom_light_msg.pose.position.z = 0;
+		odom_light_msg.pose.position.z = MotorBoard::getDCMotor().get_dt();
 
 		odom_light_msg.pose.orientation = tf::createQuaternionFromYaw(current_theta_rad);
 
 		odom_light_msg.speed.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 		odom_light_msg.speed.linear.y = ticksToMillimeters(MotorBoard::getDCMotor().get_linear_speed_order())/1000.f;
-		odom_light_msg.speed.linear.z = ticksToMillimeters(MotorBoard::getDCMotor().get_angular_speed_order())/1000.f;
+		odom_light_msg.speed.linear.z = MotorBoard::getDCMotor().get_linear_error_integ()/1000.f;
 
 		odom_light_msg.speed.angular.x = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_L));
 		odom_light_msg.speed.angular.y = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_R));
-		odom_light_msg.speed.angular.z = ticksToMillimeters((left_speed-right_speed)/2)/1000.f; // C'est complètement faux, non ?
+		odom_light_msg.speed.angular.z = MotorBoard::getDCMotor().get_linear_error()/1000.f;//ticksToMillimeters((left_speed-right_speed)/2)/1000.f; // C'est complètement faux, non ?
 		odom_light_msg.current_motor_left = motors.get_accumulated_current(M_L);
 		odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
 
@@ -371,7 +371,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
-	int32_t waiting_time = 2;
+	int32_t waiting_time = 0;
 	while(true) {
 		myboard.update();
 

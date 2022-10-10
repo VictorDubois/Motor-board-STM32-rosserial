@@ -85,6 +85,11 @@ public:
 	 */
 	int32_t get_current(const uint8_t motor_id);
 
+
+	int32_t get_linear_error();
+	float get_linear_error_integ();
+	float get_dt(){ return dt;}
+
 	/**
 	 * @brief stop the motors and reset the asserv
 	 */
@@ -145,6 +150,7 @@ public:
 	int32_t get_linear_speed_order() {return linear_speed_order;}
 	int32_t get_angular_speed_order() {return angular_speed_order;}
 private:
+	float dt;
 	volatile int32_t speed_order[NB_MOTORS];
 	DCMotorHardware* hardware;
 	MCP3002* current_reader;
