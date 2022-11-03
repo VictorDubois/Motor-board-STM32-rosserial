@@ -313,7 +313,7 @@ void MotorBoard::update() {
 	odom_lighter_msg.poseY = Y;
 	odom_lighter_msg.angleRz = current_theta_rad;
 	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-	odom_lighter_msg.speedWz = ((left_speed-right_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
+	odom_lighter_msg.speedWz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
 	odom_lighter_pub.publish(&odom_lighter_msg);
 
 	if (false && message_counter%100 == 0)
