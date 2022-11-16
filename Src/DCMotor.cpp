@@ -236,15 +236,17 @@ void DCMotor::set_speed_order(float lin, float rot) {
 	linear_speed_order = meters_to_tick * lin;// = resolution/perimeter = 4096/(pi*68mm) to convert from m/s => 19172
 	angular_speed_order = rad_to_tick * rot;// = radius when turning on the spot (=half entraxe) / speed in m/s = (250mm/2) * 19172 to convert from rad/s => 2396
 
-	int32_t left_speed_order = linear_speed_order + angular_speed_order;
-	left_speed_order = MIN(left_speed_order, max_speed);
-	left_speed_order = MAX(left_speed_order, -max_speed);
-	speed_order[M_L] = left_speed_order;
+	linear_speed_order = MIN(linear_speed_order, max_speed);
+	linear_speed_order = MAX(linear_speed_order, -max_speed);
+	angular_speed_order = MIN(angular_speed_order, max_speed);
+	angular_speed_order = MAX(angular_speed_order, -max_speed);
 
-	int32_t right_speed_order = linear_speed_order - angular_speed_order;
-	right_speed_order = MIN(right_speed_order, max_speed);
-	right_speed_order = MAX(right_speed_order, -max_speed);
-	speed_order[M_R] = right_speed_order;
+	// Limit the linear first => the robot must not be prevented from turning
+	linear_speed_order = MIN(linear_speed_order, max_speed - abs(angular_speed_order));
+	linear_speed_order = MAX(linear_speed_order, -max_speed + abs(angular_speed_order));
+
+	speed_order[M_L] = linear_speed_order + angular_speed_order;
+	speed_order[M_R] = linear_speed_order - angular_speed_order;
 }
 
 
