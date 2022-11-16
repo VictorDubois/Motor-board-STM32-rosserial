@@ -33,7 +33,7 @@ DCMotorHardware::~DCMotorHardware() {
 	HAL_GPIO_WritePin(BRAKE_GPIO_Port, BRAKE_Pin, GPIO_PIN_RESET);//BRAKE
 }
 
-uint32_t DCMotorHardware::getTicks(const uint32_t encoderId) {
+int16_t DCMotorHardware::getTicks(const uint32_t encoderId) {
 	if (encoderId == M_L) {
 		return encoder_left_timer->CNT;
 	}

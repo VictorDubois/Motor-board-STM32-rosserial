@@ -42,8 +42,9 @@ std_msgs::String str_msg;
 //ros::Publisher odom_pub("odom", &odom_msg);
 ros::Publisher asserv_pub("asserv", &asserv_msg);
 
-float get_orientation_float(long encoder1, long encoder2);
+float get_orientation_float(int32_t encoder1, int32_t encoder2);
 int fixOverflow(long after, long before);
+int32_t fixOverflowAngular(int16_t after, int32_t before);
 constexpr float ticksToMillimeters(int32_t ticks);
 constexpr int32_t millimetersToTicks(float millimeters);
 
@@ -73,6 +74,8 @@ private:
 	static MCP3002 currentReader;
 	volatile long last_encoder_left = 0;
 	volatile long last_encoder_right = 0;
+	volatile int32_t last_encoder_left_angular = 0;
+	volatile int32_t last_encoder_right_angular = 0;
 	float compute_linear_dist(const long encoder_left, const long encoder_right);
 	static float X;
 	static float Y;

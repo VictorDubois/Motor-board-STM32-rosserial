@@ -217,7 +217,7 @@ int32_t DCMotor::get_speed(uint8_t motor_id) {
 	return speed[motor_id];
 }
 
-int32_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
+int16_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
 	return hardware->getTicks(encoder_id);
 }
 

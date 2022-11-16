@@ -69,7 +69,7 @@ public:
 	 * @param encoder_id the ID of the encoder
 	 * @return the encoder's current positions
 	 */
-	int32_t get_encoder_ticks(const uint8_t encoder_id);
+	int16_t get_encoder_ticks(const uint8_t encoder_id);
 
 	/**
 	 * @brief getter for the accumulated current consumed by the motor over 20 iterations
