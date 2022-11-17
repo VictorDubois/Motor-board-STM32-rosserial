@@ -146,6 +146,8 @@ public:
 
 	void set_enable_motors(bool a_enable_motors);
 
+	void limitLinearFirst(int32_t& linear, int32_t& angular, const int32_t max);
+
 
 	int32_t get_linear_speed_order() {return linear_speed_order;}
 	int32_t get_angular_speed_order() {return angular_speed_order;}

@@ -6,6 +6,8 @@
  */
 
 #include "DCMotor.h"
+#include <cmath>        // std::abs
+
 
 template <class T>
 T get_linear(T* array) {
@@ -236,19 +238,31 @@ void DCMotor::set_speed_order(float lin, float rot) {
 	linear_speed_order = meters_to_tick * lin;// = resolution/perimeter = 4096/(pi*68mm) to convert from m/s => 19172
 	angular_speed_order = rad_to_tick * rot;// = radius when turning on the spot (=half entraxe) / speed in m/s = (250mm/2) * 19172 to convert from rad/s => 2396
 
-	linear_speed_order = MIN(linear_speed_order, max_speed);
-	linear_speed_order = MAX(linear_speed_order, -max_speed);
-	angular_speed_order = MIN(angular_speed_order, max_speed);
-	angular_speed_order = MAX(angular_speed_order, -max_speed);
-
-	// Limit the linear first => the robot must not be prevented from turning
-	linear_speed_order = MIN(linear_speed_order, max_speed - abs(angular_speed_order));
-	linear_speed_order = MAX(linear_speed_order, -max_speed + abs(angular_speed_order));
+	limitLinearFirst(linear_speed_order, angular_speed_order, max_speed);
 
 	speed_order[M_L] = linear_speed_order + angular_speed_order;
 	speed_order[M_R] = linear_speed_order - angular_speed_order;
 }
 
+void DCMotor::limitLinearFirst(int32_t& linear, int32_t& angular, const int32_t max)
+{
+	linear = MIN(linear, max);
+	linear = MAX(linear, -max);
+
+	linear = LIMIT(linear, max, -max);
+
+	angular = MIN(angular, max);
+	angular = MAX(angular, -max);
+
+	angular = LIMIT(linear, max, -max);
+
+	// Limit the linear first => the robot must not be prevented from turning
+	linear = MIN(linear, max - abs(angular));
+	linear = MAX(linear, -max + abs(angular));
+
+	linear = LIMIT(linear, max - abs(angular), -max + abs(angular));
+
+}
 
 
 void DCMotor::control_ramp_speed_polar(void) {
@@ -280,19 +294,14 @@ void DCMotor::control_ramp_speed_polar(void) {
 	angular_pid_i = 0;
 	angular_pid_d = 0;*/
 
-	int32_t linear_max_speed_delta = max_speed_delta;
+	int32_t linear_speed_error = linear_speed_order - linear_speed;
+	int32_t angular_speed_error = angular_speed_order - angular_speed;
 
-	if( (int32_t)(linear_speed_order) - linear_speed >= linear_max_speed_delta) {
-		linear_refined_speed_order = linear_speed+linear_max_speed_delta;
-	}
-	else if ( (int32_t)(linear_speed_order) - linear_speed <= -linear_max_speed_delta ) {
-		linear_refined_speed_order = linear_speed-linear_max_speed_delta;
-	}
-	else {
-		linear_refined_speed_order = linear_speed_order;
-	}
+	limitLinearFirst(linear_speed_error, angular_speed_error, max_speed_delta);
 
-	volatile int32_t linear_speed_error = linear_refined_speed_order - linear_speed;
+
+	//linear_refined_speed_order
+
 
 	uint32_t current_time = HAL_GetTick(); // in ms
 	dt = (current_time - last_update_time)/1000.f; // is seconds
@@ -307,17 +316,7 @@ void DCMotor::control_ramp_speed_polar(void) {
 
 	linear_last_speed_error = linear_speed_error;
 
-	if( (int32_t)(angular_speed_order) - angular_speed >= max_speed_delta) {
-		angular_refined_speed_order = angular_speed+max_speed_delta;
-	}
-	else if ( (int32_t)(angular_speed_order) - angular_speed <= -max_speed_delta ) {
-		angular_refined_speed_order = angular_speed-max_speed_delta;
-	}
-	else {
-		angular_refined_speed_order = angular_speed_order;
-	}
 
-	volatile int32_t angular_speed_error = angular_refined_speed_order - angular_speed;
 	angular_speed_integ_error += angular_speed_error* dt; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
 	int32_t angular_voltage =
@@ -331,26 +330,24 @@ void DCMotor::control_ramp_speed_polar(void) {
 	voltage[M_R] = linear_voltage - angular_voltage;
 
 	for(int i = 0; i < NB_MOTORS; i++){
-		voltage[i] = MIN(voltage[i], DUTYMAX);
-		voltage[i] = MAX(voltage[i], -DUTYMAX);
+        voltage[i] = LIMIT(voltage[i], DUTYMAX, -DUTYMAX);
 	}
 }
 
 void DCMotor::control_ramp_speed(void) {
     //if( stopped ) return;
 
-    for(int i = 0; i < NB_MOTORS; i++){
-        if( (int32_t)(speed_order[i]) - speed[i] >= max_speed_delta) {
-        	refined_speed_order[i] = speed[i]+max_speed_delta;
-        }
-        else if ( (int32_t)(speed_order[i]) - speed[i] <= -max_speed_delta ) {
-        	refined_speed_order[i] = speed[i]-max_speed_delta;
-        }
-        else {
-        	refined_speed_order[i] = speed_order[i];
-        }
+	int32_t linear_speed_error = linear_speed_order - linear_speed;
+	int32_t angular_speed_error = angular_speed_order - angular_speed;
+	limitLinearFirst(linear_speed_error, angular_speed_error, max_speed_delta);
 
-        volatile int32_t speed_error = refined_speed_order[i] - speed[i];
+	refined_speed_order[M_L] = linear_speed_error + angular_speed_error;
+	refined_speed_order[M_R] = linear_speed_error - angular_speed_error;
+
+
+
+    for(int i = 0; i < NB_MOTORS; i++){
+        volatile int32_t speed_error = refined_speed_order[i];
         speed_integ_error[i] += speed_error; // dt is included in pid_i because it is constant. If we change dt, pid_i must be scaled
 
         voltage[i] =
@@ -359,8 +356,7 @@ void DCMotor::control_ramp_speed(void) {
 
         last_speed_error[i] = speed_error;
 
-        voltage[i] = MIN(voltage[i], DUTYMAX);
-        voltage[i] = MAX(voltage[i], -DUTYMAX);
+        voltage[i] = LIMIT(voltage[i], DUTYMAX, -DUTYMAX);
     }
 }
 

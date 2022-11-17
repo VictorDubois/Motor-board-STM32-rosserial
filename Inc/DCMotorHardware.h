@@ -16,6 +16,7 @@
 
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y))
+#define LIMIT(X, Y, Z) (Y > Z ? MIN(MAX(X, Y), Z) : MIN(MAX(X, Z), Y))
 
 class DCMotorHardware
 {
