@@ -246,22 +246,12 @@ void DCMotor::set_speed_order(float lin, float rot) {
 
 void DCMotor::limitLinearFirst(int32_t& linear, int32_t& angular, const int32_t max)
 {
-	linear = MIN(linear, max);
-	linear = MAX(linear, -max);
-
 	linear = LIMIT(linear, max, -max);
 
-	angular = MIN(angular, max);
-	angular = MAX(angular, -max);
-
-	angular = LIMIT(linear, max, -max);
+	angular = LIMIT(angular, max, -max);
 
 	// Limit the linear first => the robot must not be prevented from turning
-	linear = MIN(linear, max - abs(angular));
-	linear = MAX(linear, -max + abs(angular));
-
 	linear = LIMIT(linear, max - abs(angular), -max + abs(angular));
-
 }
 
 
