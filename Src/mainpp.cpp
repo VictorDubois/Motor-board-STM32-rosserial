@@ -120,8 +120,8 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	currentReader = MCP3002();
 	motors = DCMotor(&motorsHardware, &currentReader);
 
-	motors.set_max_acceleration(millimetersToTicks(3000));//mm/s/s
-	motors.set_max_speed(millimetersToTicks(500));//mm/s (=1.9rad/s)
+	motors.set_max_acceleration(millimetersToTicks(9810));//mm/s/s
+	motors.set_max_speed(millimetersToTicks(2000));//mm/s (=1.9rad/s)
 
 	set_odom(0, 0, 0);
 
