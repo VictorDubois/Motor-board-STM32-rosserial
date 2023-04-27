@@ -136,7 +136,7 @@ void DCMotor::overCurrentProtection() {
 			stopped_timeout = hardware->getMilliSecondsElapsed() + 3000;
 		}
 
-		constexpr uint8_t current_averaging_period = 20;// measure over 20 iterations
+		constexpr uint8_t current_averaging_period = 30;// measure over 20 iterations
 		constexpr float current_averaging_factor = 1.f - (1.f/current_averaging_period);
 
 		accumulated_current[i] = current_averaging_factor * accumulated_current[i] + current[i];
