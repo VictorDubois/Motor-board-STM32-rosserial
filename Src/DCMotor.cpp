@@ -66,6 +66,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 
 void DCMotor::override_PWM(int pwm_left, int pwm_right)
 {
+	resetMotors();
 	override_pwm = true;
 	override_pwms[M_L] = pwm_left;
 	override_pwms[M_R] = pwm_right;
@@ -134,6 +135,7 @@ void DCMotor::overCurrentProtection() {
 		current[i] = current_reader->readCurrent(i);
 		if (current[i] == CURRENT_READER_OFFLINE) {
 			stopped_timeout = hardware->getMilliSecondsElapsed() + 3000;
+			resetMotors();
 		}
 
 		constexpr uint8_t current_averaging_period = 20;// measure over 20 iterations
