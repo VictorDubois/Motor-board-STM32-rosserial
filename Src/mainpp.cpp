@@ -9,11 +9,104 @@
 extern "C" {
 	#include "main.h"
 }
-#include <tf/tf.h>
-ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
+#include <string.h>
+#include <string>
+#include "math.h"
+//#include <tf/tf.h>
+
+/*ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
 ros::Subscriber<krabi_msgs::motors_parameters> parameters_sub("motors_parameters", parameters_cb);
 ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
-ros::Subscriber<krabi_msgs::motors_cmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);
+ros::Subscriber<krabi_msgs::motors_cmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);*/
+
+float get_float(std::string* a_string, int a_beginning)
+{
+    //Serial.print((*a_string).c_str());
+	std::string hexValue = a_string->substr(a_beginning, a_beginning+8); // Extract hexadecimal value
+    //Serial.print(hexValue);
+    uint32_t floatHex = strtoul(hexValue.c_str(), NULL, 16); // Convert hexadecimal string to unsigned long
+    //Serial.print(floatHex);
+    float floatValue;
+    memcpy(&floatValue, &floatHex, sizeof(floatValue)); // Convert unsigned long to float
+    return floatValue;
+}
+
+void motors_cmd_hex_cb(std::string& a_message)
+{
+	krabi_msgs::motors_cmd motors_cmd_msg;
+	int i = 0;
+    const int offset = 1;
+    const int float_msg_size = 8;
+    motors_cmd_msg.PWM_override_left = get_float(&a_message, offset + (i++)*float_msg_size);
+    motors_cmd_msg.PWM_override_right = get_float(&a_message, offset + (i++)*float_msg_size);
+    motors_cmd_msg.enable_motors = get_float(&a_message, offset + (i++)*float_msg_size) > 0.5;
+    motors_cmd_msg.override_PWM = get_float(&a_message, offset + (i++)*float_msg_size) > 0.5;
+    motors_cmd_msg.reset_encoders = get_float(&a_message, offset + (i++)*float_msg_size) > 0.5;
+
+    motors_cmd_cb(motors_cmd_msg);
+}
+
+void parameters_hex_cb(std::string& a_message)
+{
+	krabi_msgs::motors_parameters motors_parameters_msg;
+    int i = 0;
+    const int offset = 1;
+    const int float_msg_size = 8;
+    motors_parameters_msg.max_current = get_float(&a_message, offset + (i++)*float_msg_size);
+    motors_parameters_msg.max_current_left = get_float(&a_message, offset + (i++)*float_msg_size);
+    motors_parameters_msg.max_current_right = get_float(&a_message, offset + (i++)*float_msg_size);
+
+    parameters_cb(motors_parameters_msg);
+}
+
+void cmd_vel_hex_cb(std::string& a_message)
+{
+	geometry_msgs::Twist twist_msg;
+    int i = 0;
+    const int offset = 1;
+    const int float_msg_size = 8;
+    twist_msg.linear.x = get_float(&a_message, offset + (i++)*float_msg_size);
+    twist_msg.angular.z = get_float(&a_message, offset + (i++)*float_msg_size);
+
+    cmd_vel_cb(twist_msg);
+}
+
+void enable_motor_hex_cb(std::string& a_message)
+{
+	std_msgs::Bool enable_msg;
+    int i = 0;
+    const int offset = 1;
+    const int float_msg_size = 8;
+    enable_msg.data = get_float(&a_message, offset + (i++)*float_msg_size) > 0.5;
+
+    enable_motor_cb(enable_msg);
+}
+
+void read_serial()
+{
+    std::string line; //= Serial.readStringUntil('\n');
+    if(line.length() < 1 + 8*1)
+    {
+      return;// Line too short, invalid
+    }
+
+    if(line[0]=="e")
+    {
+    	enable_motor_hex_cb(line);
+    }
+    if(line[0]=="c")
+	{
+    	cmd_vel_hex_cb(line);)
+	}
+    if(line[0]=="p")
+	{
+    	parameters_hex_cb(line);
+	}
+    if(line[0]=="c")
+	{
+    	motors_cmd_hex_cb(line);
+	}
+}
 
 void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 {
@@ -39,13 +132,13 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 	}
 }
 
-void set_odom_alone_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
+/*void set_odom_alone_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
 {
 	MotorBoard::set_odom(req.x, req.y, req.theta);
 	res.success = true;
 }
 
-ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);
+ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);*/
 
 void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
 {
@@ -68,11 +161,21 @@ void enable_motor_cb(const std_msgs::Bool& enable)
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
-	MotorBoard::getNodeHandle().getHardware()->flush();
+	//MotorBoard::getNodeHandle().getHardware()->flush();
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
+	//MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
+	if (huart->Instance == USART2) {
+	        rx_buffer[rx_index++] = huart->Instance->RDR; // Read received byte and store in buffer
+	        if (rx_buffer[rx_index - 1] == "\n") {
+	            // Process the received line
+	            // Example: Print received line
+	            HAL_UART_Transmit(&huart2, rx_buffer, rx_index, HAL_MAX_DELAY);
+	            rx_index = 0; // Reset buffer index
+	        }
+	        HAL_UART_Receive_IT(&huart2, &rx_buffer[rx_index], 1); // Enable UART receive interrupt again
+	    }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
@@ -84,7 +187,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	}
 }
 
-ros::NodeHandle MotorBoard::nh;
+
+
+//ros::NodeHandle MotorBoard::nh;
 DCMotorHardware MotorBoard::motorsHardware;
 DCMotor MotorBoard::motors;
 MCP3002 MotorBoard::currentReader;
@@ -125,11 +230,11 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 
 	set_odom(0, 0, 0);
 
-	nh.initNode();
+	//nh.initNode();
 	HAL_Delay(100);
 
 	//nh.advertise(odom_pub);
-	nh.advertise(asserv_pub);
+	/*nh.advertise(asserv_pub);
 	nh.advertise(odom_light_pub);
 	nh.advertise(odom_lighter_pub);
 	nh.advertise(encoders_pub);
@@ -139,11 +244,11 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 	nh.subscribe(enable_sub);
 	nh.subscribe(motors_cmd_sub);
 
-	nh.advertiseService(set_odom_srv);
+	nh.advertiseService(set_odom_srv);*/
 
 	HAL_Delay(100);
 	uint8_t reinit = 1;
-	while (!nh.connected())
+	/*while (!nh.connected())
 	{
 	    nh.spinOnce();
 		if (HAL_GetTick()/1000 > reinit){
@@ -151,16 +256,16 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 			reinit++;
 		}
 	    HAL_Delay(MS_BETWEEN_UPDATES);
-	}
+	}*/
 
 
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}
 
-ros::NodeHandle& MotorBoard::getNodeHandle(void) {
+/*ros::NodeHandle& MotorBoard::getNodeHandle(void) {
 	return nh;
-}
+}*/
 
 DCMotor& MotorBoard::getDCMotor(void) {
 	return motors;
@@ -261,22 +366,23 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
 }
 
 void MotorBoard::update_inputs() {
-	nh.spinOnce();
+	// @todo
+	//nh.spinOnce();
 }
 
 void MotorBoard::update() {
-	if (!nh.connected()){
+	/*if (!nh.connected()){
 		return;
-	}
+	}*/
 
 	int16_t encoder_left = motors.get_encoder_ticks(M_L);
 	int16_t encoder_right = motors.get_encoder_ticks(M_R);
 
 	encoders_msg.encoder_left = encoder_left;
 	encoders_msg.encoder_right = encoder_right;
-	encoders_msg.header.stamp = nh.now();
+	//encoders_msg.header.stamp = nh.now();
 
-	encoders_pub.publish(&encoders_msg);
+	//encoders_pub.publish(&encoders_msg);//@todo
 
 	int32_t right_speed = motors.get_speed(M_R);
 	int32_t left_speed = motors.get_speed(M_L);
@@ -334,19 +440,20 @@ void MotorBoard::update() {
 	odom_msg.twist.twist.angular.z = odometry->getAngularSpeed();
 	odom_pub.publish(&odom_msg);*/
 
-	odom_lighter_msg.header.stamp = nh.now();
+	/*odom_lighter_msg.header.stamp = nh.now();
 	odom_lighter_msg.header.seq = message_counter++;
-	odom_lighter_msg.header.frame_id = "";
+	odom_lighter_msg.header.frame_id = "";*/
 	odom_lighter_msg.poseX = X;
 	odom_lighter_msg.poseY = Y;
 	odom_lighter_msg.angleRz = current_theta_rad;
 	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 	odom_lighter_msg.speedWz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
-	odom_lighter_pub.publish(&odom_lighter_msg);
+	//odom_lighter_pub.publish(&odom_lighter_msg);//@todo
 
 	if (false && message_counter%100 == 0)
 	{
-		odom_light_msg.header.stamp = nh.now();
+		/*
+		//odom_light_msg.header.stamp = nh.now();
 		odom_light_msg.header.seq = message_counter++;
 		odom_light_msg.header.frame_id = "odom_light_newer";
 		odom_light_msg.pose.position.x = X;
@@ -366,7 +473,7 @@ void MotorBoard::update() {
 		odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
 
 
-		odom_light_pub.publish(&odom_light_msg);
+		odom_light_pub.publish(&odom_light_msg);*/
 
 		motors_msg.current_left = motors.get_current(M_L);
 		motors_msg.current_right = motors.get_current(M_R);
@@ -374,12 +481,12 @@ void MotorBoard::update() {
 		motors_msg.current_left_accumulated = motors.get_accumulated_current(M_L);
 		motors_msg.current_right_accumulated = motors.get_accumulated_current(M_R);
 
-		motors_pub.publish(&motors_msg);
+		//motors_pub.publish(&motors_msg);
 
 
 	}
 
-	nh.spinOnce();
+	//nh.spinOnce();
 }
 
 void setup()
