@@ -83,6 +83,7 @@ private:
 	static float Y;
 	static float theta_offset;
 	volatile static long long message_counter;
+	UART_HandleTypeDef * huart2;
 };
 
 #ifdef __cplusplus
@@ -91,7 +92,7 @@ private:
 
 
 void setup();
-void loop(TIM_HandleTypeDef* motorTimHandler, TIM_HandleTypeDef* loopTimHandler);
+void loop(TIM_HandleTypeDef* motorTimHandler, TIM_HandleTypeDef* loopTimHandler, UART_HandleTypeDef * huart2);
 
 #ifdef __cplusplus
 }

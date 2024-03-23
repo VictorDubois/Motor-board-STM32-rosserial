@@ -12,6 +12,11 @@ extern "C" {
 #include <string.h>
 #include <string>
 #include "math.h"
+
+#define RX_BUFFER_SIZE 100
+uint8_t rx_buffer[RX_BUFFER_SIZE];
+uint8_t rx_line_buffer[RX_BUFFER_SIZE*10];
+int offset_message_already_received = 0;
 //#include <tf/tf.h>
 
 /*ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
@@ -84,25 +89,34 @@ void enable_motor_hex_cb(std::string& a_message)
 
 void read_serial()
 {
-    std::string line; //= Serial.readStringUntil('\n');
+
+/*
+	if (rx_buffer[rx_index - 1] == "\n") {
+		// Process the received line
+		// Example: Print received line
+		HAL_UART_Transmit(&huart, rx_buffer, rx_index, HAL_MAX_DELAY);
+		rx_index = 0; // Reset buffer index
+	}
+    //std::string line; //= Serial.readStringUntil('\n');
     if(line.length() < 1 + 8*1)
     {
       return;// Line too short, invalid
-    }
+    }*/
+	std::string line = std::string((char*)rx_line_buffer);
 
-    if(line[0]=="e")
+    if(line[0]=='e')
     {
     	enable_motor_hex_cb(line);
     }
-    if(line[0]=="c")
+    if(line[0]=='c')
 	{
-    	cmd_vel_hex_cb(line);)
+    	cmd_vel_hex_cb(line);
 	}
-    if(line[0]=="p")
+    if(line[0]=='p')
 	{
     	parameters_hex_cb(line);
 	}
-    if(line[0]=="c")
+    if(line[0]=='c')
 	{
     	motors_cmd_hex_cb(line);
 	}
@@ -166,17 +180,59 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	//MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
+	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	if (huart->Instance == USART2) {
-	        rx_buffer[rx_index++] = huart->Instance->RDR; // Read received byte and store in buffer
-	        if (rx_buffer[rx_index - 1] == "\n") {
-	            // Process the received line
-	            // Example: Print received line
-	            HAL_UART_Transmit(&huart2, rx_buffer, rx_index, HAL_MAX_DELAY);
-	            rx_index = 0; // Reset buffer index
-	        }
-	        HAL_UART_Receive_IT(&huart2, &rx_buffer[rx_index], 1); // Enable UART receive interrupt again
-	    }
+		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+
+		int dma_buffer_offset = 0;
+
+		int i = 0;
+		while (rx_buffer[i] != '\n' && i < RX_BUFFER_SIZE)
+		{
+			rx_line_buffer[offset_message_already_received + i] = rx_buffer[i];
+			i++;
+		}
+		offset_message_already_received += i;
+		dma_buffer_offset += i;
+
+		if (rx_buffer[i] == '\n')
+		{
+			// Message received !
+			read_serial();
+			offset_message_already_received = 0;
+		}
+
+		if (i == RX_BUFFER_SIZE)
+		{
+			// end of line in a future buffer
+		}
+
+
+		//MotorBoard::getDCMotor().receiveSerial(huart->Instance->RDR);
+		/*rx_buffer[rx_index++] = huart->Instance->RDR; // Read received byte and store in buffer
+		if (rx_buffer[rx_index - 1] == "\n") {
+			// Process the received line
+			// Example: Print received line
+			HAL_UART_Transmit(&huart, rx_buffer, rx_index, HAL_MAX_DELAY);
+			rx_index = 0; // Reset buffer index
+		}*/
+		//HAL_UART_Receive_IT(&huart, &rx_buffer[rx_index], 1); // Enable UART receive interrupt again
+		//HAL_UART_Receive_DMA(huart, rx_buffer, RX_BUFFER_SIZE); // Start a new DMA reception
+		HAL_UARTEx_ReceiveToIdle_DMA(huart, rx_buffer, 1); // Start a new DMA reception
+		//HAL_UART_Receive_IT(huart, rx_buffer, 1); // Enable UART receive interrupt again
+
+		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn On LED
+
+
+
+	}
+	//HAL_UART_Receive_DMA(huart, rx_buffer, 10); //works
 }
+
+//void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
+//{
+//	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+//}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	if (htim->Instance == TIM15) {
@@ -210,7 +266,9 @@ void MotorBoard::set_odom(float a_x, float a_y, float a_theta)
 	theta_offset = a_theta - current_theta;
 }
 
-MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
+MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler){
+	//, UART_HandleTypeDef * huart2) :
+//		huart2(huart2){
 
 	while(false)
 	{
@@ -246,7 +304,9 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler) {
 
 	nh.advertiseService(set_odom_srv);*/
 
+	//HAL_UARTEx_ReceiveToIdle_DMA(huart, rx_buffer, RX_BUFFER_SIZE); // Start a new DMA reception
 	HAL_Delay(100);
+	//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	uint8_t reinit = 1;
 	/*while (!nh.connected())
 	{
@@ -501,12 +561,14 @@ void setup()
 }
 
 
-void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler)
+void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler, UART_HandleTypeDef * huart2)
 {
-	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	MotorBoard myboard = MotorBoard(a_motorTimHandler);
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
 	int32_t waiting_time = 0;
+	//HAL_UARTEx_ReceiveToIdle_DMA(huart2, rx_buffer, RX_BUFFER_SIZE);
+	HAL_UART_Receive_DMA(huart2, rx_buffer, 10);
 	while(true) {
 		myboard.update();
 
