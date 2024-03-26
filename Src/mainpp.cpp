@@ -176,9 +176,12 @@ void enable_motor_cb(const std_msgs::Bool& enable)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
 	//MotorBoard::getNodeHandle().getHardware()->flush();
+	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+
+
+void receiveUART(UART_HandleTypeDef *huart){
 	//MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
 	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	if (huart->Instance == USART2) {
@@ -218,7 +221,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		}*/
 		//HAL_UART_Receive_IT(&huart, &rx_buffer[rx_index], 1); // Enable UART receive interrupt again
 		//HAL_UART_Receive_DMA(huart, rx_buffer, RX_BUFFER_SIZE); // Start a new DMA reception
-		HAL_UARTEx_ReceiveToIdle_DMA(huart, rx_buffer, 1); // Start a new DMA reception
+		//HAL_UARTEx_ReceiveToIdle_DMA(huart, rx_buffer, 1); // Start a new DMA reception
 		//HAL_UART_Receive_IT(huart, rx_buffer, 1); // Enable UART receive interrupt again
 
 		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn On LED
@@ -227,6 +230,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 	}
 	//HAL_UART_Receive_DMA(huart, rx_buffer, 10); //works
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart){
+	receiveUART(huart);
+
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	receiveUART(huart);
 }
 
 //void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
@@ -568,7 +579,8 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
 	int32_t waiting_time = 0;
 	//HAL_UARTEx_ReceiveToIdle_DMA(huart2, rx_buffer, RX_BUFFER_SIZE);
-	HAL_UART_Receive_DMA(huart2, rx_buffer, 10);
+	//HAL_UART_Receive_DMA(huart2, rx_buffer, 10);
+	HAL_UARTEx_ReceiveToIdle_DMA(huart2, rx_buffer, 10); // Start a new DMA reception
 	while(true) {
 		myboard.update();
 
