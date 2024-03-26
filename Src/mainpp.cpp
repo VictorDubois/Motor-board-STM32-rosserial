@@ -13,9 +13,11 @@ extern "C" {
 #include <string>
 #include "math.h"
 
-#define RX_BUFFER_SIZE 100
+#define TX_BUFFER_SIZE_toto 100
+#define RX_LINE_BUFFER_SIZE 100
+#define RX_BUFFER_SIZE 1
 uint8_t rx_buffer[RX_BUFFER_SIZE];
-uint8_t rx_line_buffer[RX_BUFFER_SIZE*10];
+uint8_t rx_line_buffer[RX_LINE_BUFFER_SIZE];
 int offset_message_already_received = 0;
 //#include <tf/tf.h>
 
@@ -205,10 +207,6 @@ void receiveUART(UART_HandleTypeDef *huart){
 			offset_message_already_received = 0;
 		}
 
-		if (i == RX_BUFFER_SIZE)
-		{
-			// end of line in a future buffer
-		}
 
 
 		//MotorBoard::getDCMotor().receiveSerial(huart->Instance->RDR);
@@ -232,10 +230,49 @@ void receiveUART(UART_HandleTypeDef *huart){
 	//HAL_UART_Receive_DMA(huart, rx_buffer, 10); //works
 }
 
+void float_to_hex(float a_value, uint8_t* a_out, int start_pos)
+{
+    memcpy(a_out + start_pos, &a_value, sizeof(a_value));
+}
+
+void publish_encoders(UART_HandleTypeDef * huart2)
+{
+	uint8_t out_msg[TX_BUFFER_SIZE_toto];
+	out_msg[0] = 'e';
+	int start_pos = 1;
+	const int step = 4;
+	float_to_hex(encoders_msg.encoder_left, out_msg, start_pos);
+	start_pos += step;
+	float_to_hex(encoders_msg.encoder_right, out_msg, start_pos);
+	start_pos += step;
+
+	HAL_UART_Transmit_DMA(huart2, out_msg, start_pos);
+}
+
+void publish_odom_lighter(UART_HandleTypeDef * huart2)
+{
+	uint8_t out_msg[TX_BUFFER_SIZE_toto];
+	out_msg[0] = 'o';
+	int start_pos = 1;
+	const int step = 4;
+	float_to_hex(odom_lighter_msg.poseX, out_msg, start_pos);
+	start_pos += step;
+	float_to_hex(odom_lighter_msg.poseY, out_msg, start_pos);
+	start_pos += step;
+	float_to_hex(odom_lighter_msg.angleRz, out_msg, start_pos);
+	start_pos += step;
+	float_to_hex(odom_lighter_msg.speedVx, out_msg, start_pos);
+	start_pos += step;
+	float_to_hex(odom_lighter_msg.speedWz, out_msg, start_pos);
+	start_pos += step;
+
+	HAL_UART_Transmit_DMA(huart2, out_msg, start_pos);
+}
+
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart){
 	receiveUART(huart);
-
 }
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	receiveUART(huart);
 }
@@ -454,6 +491,7 @@ void MotorBoard::update() {
 	//encoders_msg.header.stamp = nh.now();
 
 	//encoders_pub.publish(&encoders_msg);//@todo
+	publish_encoders(huart2);
 
 	int32_t right_speed = motors.get_speed(M_R);
 	int32_t left_speed = motors.get_speed(M_L);
@@ -519,6 +557,7 @@ void MotorBoard::update() {
 	odom_lighter_msg.angleRz = current_theta_rad;
 	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 	odom_lighter_msg.speedWz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
+	publish_odom_lighter(huart2);
 	//odom_lighter_pub.publish(&odom_lighter_msg);//@todo
 
 	if (false && message_counter%100 == 0)
@@ -580,6 +619,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	int32_t waiting_time = 0;
 	//HAL_UARTEx_ReceiveToIdle_DMA(huart2, rx_buffer, RX_BUFFER_SIZE);
 	//HAL_UART_Receive_DMA(huart2, rx_buffer, 10);
+	//HAL_UART_Receive_IT(huart2, rx_buffer, 1);
 	HAL_UARTEx_ReceiveToIdle_DMA(huart2, rx_buffer, 10); // Start a new DMA reception
 	while(true) {
 		myboard.update();
