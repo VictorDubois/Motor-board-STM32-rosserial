@@ -58,7 +58,7 @@ void enable_motor_cb(const std_msgs::Bool& enable);
 class MotorBoard
 {
 public:
-	MotorBoard(TIM_HandleTypeDef* motorTimHandler);
+	MotorBoard(TIM_HandleTypeDef* motorTimHandler, UART_HandleTypeDef * huart2);
 	MotorBoard();
 	~MotorBoard();
 
