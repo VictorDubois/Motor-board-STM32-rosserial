@@ -412,38 +412,43 @@ void MotorBoard::update_inputs() {
 
 }
 
+void MotorBoard::resetUart()
+{
+	// 1. Disable UART and DMA
+	HAL_UART_DMAStop(huart2); // Stop DMA associated with UART2
+	HAL_UART_DeInit(huart2); // Deinitialize UART2
+
+	// 2. Reset UART Configuration
+	huart2->Instance = USART2;
+	huart2->Init.BaudRate = 115200;
+	huart2->Init.WordLength = UART_WORDLENGTH_8B;
+	huart2->Init.StopBits = UART_STOPBITS_1;
+	huart2->Init.Parity = UART_PARITY_NONE;
+	huart2->Init.Mode = UART_MODE_TX_RX;
+	huart2->Init.HwFlowCtl = UART_HWCONTROL_NONE;
+	huart2->Init.OverSampling = UART_OVERSAMPLING_16;
+	huart2->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+	huart2->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
+	while (HAL_UART_Init(huart2) != HAL_OK)
+	{
+		toggleLed();
+		HAL_Delay(100);
+	}
+	while (HAL_UART_Receive_DMA(huart2, rx_buffer, 1) != HAL_OK)
+	{
+		toggleLed();
+		HAL_Delay(300);
+	}
+}
+
 void MotorBoard::update() {
 	nb_updates_without_message++;
 
 	// Check if the heart beat is OK
 	if (nb_updates_without_message>10)
 	{
-		// 1. Disable UART and DMA
-		HAL_UART_DMAStop(huart2); // Stop DMA associated with UART2
-		HAL_UART_DeInit(huart2); // Deinitialize UART2
-
-		// 2. Reset UART Configuration
-		huart2->Instance = USART2;
-		huart2->Init.BaudRate = 115200;
-		huart2->Init.WordLength = UART_WORDLENGTH_8B;
-		huart2->Init.StopBits = UART_STOPBITS_1;
-		huart2->Init.Parity = UART_PARITY_NONE;
-		huart2->Init.Mode = UART_MODE_TX_RX;
-		huart2->Init.HwFlowCtl = UART_HWCONTROL_NONE;
-		huart2->Init.OverSampling = UART_OVERSAMPLING_16;
-		huart2->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-		huart2->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-
-		while (HAL_UART_Init(huart2) != HAL_OK)
-		{
-			toggleLed();
-			HAL_Delay(100);
-		}
-		while (HAL_UART_Receive_DMA(huart2, rx_buffer, 1) != HAL_OK)
-		{
-			toggleLed();
-			HAL_Delay(300);
-		}
+		this->resetUart();
 	}
 
 	int16_t encoder_left = motors.get_encoder_ticks(M_L);
@@ -487,29 +492,6 @@ void MotorBoard::update() {
 
 	if (false && message_counter%100 == 0)
 	{
-		/*
-		//odom_light_msg.header.stamp = nh.now();
-		odom_light_msg.header.seq = message_counter++;
-		odom_light_msg.header.frame_id = "odom_light_newer";
-		odom_light_msg.pose.position.x = X;
-		odom_light_msg.pose.position.y = Y;
-		odom_light_msg.pose.position.z = MotorBoard::getDCMotor().get_dt();
-
-		odom_light_msg.pose.orientation = tf::createQuaternionFromYaw(current_theta_rad);
-
-		odom_light_msg.speed.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-		odom_light_msg.speed.linear.y = ticksToMillimeters(MotorBoard::getDCMotor().get_linear_speed_order())/1000.f;
-		odom_light_msg.speed.linear.z = MotorBoard::getDCMotor().get_linear_error_integ()/1000.f;
-
-		odom_light_msg.speed.angular.x = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_L));
-		odom_light_msg.speed.angular.y = ticksToMillimeters(MotorBoard::getDCMotor().get_voltage(M_R));
-		odom_light_msg.speed.angular.z = MotorBoard::getDCMotor().get_linear_error()/1000.f;//ticksToMillimeters((left_speed-right_speed)/2)/1000.f; // C'est complètement faux, non ?
-		odom_light_msg.current_motor_left = motors.get_accumulated_current(M_L);
-		odom_light_msg.current_motor_right = motors.get_accumulated_current(M_R);
-
-
-		odom_light_pub.publish(&odom_light_msg);*/
-
 		motors_msg.current_left = motors.get_current(M_L);
 		motors_msg.current_right = motors.get_current(M_R);
 
@@ -522,11 +504,6 @@ void MotorBoard::update() {
 
 void setup()
 {
-  //pinMode(BRAKE, OUTPUT);
-  //digitalWrite(BRAKE, LOW);
-
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);//LED
-  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);//BRAKE
   HAL_GPIO_WritePin(DIR_A_GPIO_Port, DIR_A_Pin, GPIO_PIN_RESET);//DIR_A
   HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET);//DIR_B
 }
@@ -559,16 +536,6 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 		for(int ii = 0; ii< 10 ; ii++){
 			myboard.update_inputs();
 
-			// Debug messages
-
-			/*int32_t right_speed = MotorBoard::getDCMotor().get_speed(M_R);
-			int32_t left_speed = MotorBoard::getDCMotor().get_speed(M_L);
-			float current_speed = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-			asserv_msg.max_current = current_speed;
-			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
-			asserv_msg.max_current_left = static_cast<float>(MotorBoard::getDCMotor().get_linear_speed_order())/500;
-
-			asserv_pub.publish(&asserv_msg);*/
 
 			HAL_Delay(waiting_time);
 		}

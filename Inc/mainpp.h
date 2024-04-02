@@ -84,6 +84,7 @@ private:
 	static float theta_offset;
 	volatile static long long message_counter;
 	UART_HandleTypeDef * huart2;
+	void resetUart();
 };
 void toggleLed();
 
