@@ -20,16 +20,11 @@ uint8_t rx_buffer[RX_BUFFER_SIZE];
 uint8_t rx_line_buffer[RX_LINE_BUFFER_SIZE];
 uint8_t tx_e_line_buffer[TX_LINE_BUFFER_SIZE];
 uint8_t tx_o_line_buffer[TX_LINE_BUFFER_SIZE];
-int offset_message_already_received = 0;
+unsigned int offset_message_already_received = 0;
 int nb_messages_received = 0;
 float test_message_received = 0;
 unsigned int nb_updates_without_message = 0;
-//#include <tf/tf.h>
 
-/*ros::Subscriber<geometry_msgs::Twist> twist_sub("cmd_vel", cmd_vel_cb);
-ros::Subscriber<krabi_msgs::motors_parameters> parameters_sub("motors_parameters", parameters_cb);
-ros::Subscriber<std_msgs::Bool> enable_sub("enable_motor", enable_motor_cb);
-ros::Subscriber<krabi_msgs::motors_cmd> motors_cmd_sub("motors_cmd", motors_cmd_cb);*/
 
 float get_float(uint8_t* a_string, int a_beginning)
 {
@@ -65,8 +60,6 @@ void parameters_hex_cb(uint8_t* a_message)
     const int float_msg_size = 8;
     motors_parameters_msg.max_current_left = get_float(a_message, offset + (i++)*float_msg_size);
     motors_parameters_msg.max_current_right = get_float(a_message, offset + (i++)*float_msg_size);
-    //test_message_received = get_float(a_message, offset + (i++)*float_msg_size);
-    //motors_parameters_msg.max_current = test_message_received;
     motors_parameters_msg.max_current = get_float(a_message, offset + (i++)*float_msg_size);
 
     parameters_cb(motors_parameters_msg);
@@ -147,14 +140,6 @@ void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg)
 	}
 }
 
-/*void set_odom_alone_cb(const krabi_msgs::SetOdomRequest &req, krabi_msgs::SetOdomResponse &res)
-{
-	MotorBoard::set_odom(req.x, req.y, req.theta);
-	res.success = true;
-}
-
-ros::ServiceServer<krabi_msgs::SetOdomRequest, krabi_msgs::SetOdomResponse> set_odom_srv("set_odom", set_odom_alone_cb);*/
-
 void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
 {
 	MotorBoard::getDCMotor().set_max_current(a_parameters.max_current);
@@ -164,8 +149,6 @@ void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
 	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
-	//asserv_msg.max_current_left = twist.linear.x;
-
 }
 
 void enable_motor_cb(const std_msgs::Bool& enable)
@@ -175,15 +158,8 @@ void enable_motor_cb(const std_msgs::Bool& enable)
 	}
 }
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
-	//MotorBoard::getNodeHandle().getHardware()->flush();
-	//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
-}
-
-
 
 void receiveUART(UART_HandleTypeDef *huart){
-	//MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
 	if (huart->Instance == USART2) {
 		test_message_received++;
 
@@ -222,42 +198,11 @@ void receiveUART(UART_HandleTypeDef *huart){
 				offset_message_already_received = 0;
 			}
 		}
-
-
-
-		//MotorBoard::getDCMotor().receiveSerial(huart->Instance->RDR);
-		/*rx_buffer[rx_index++] = huart->Instance->RDR; // Read received byte and store in buffer
-		if (rx_buffer[rx_index - 1] == "\n") {
-			// Process the received line
-			// Example: Print received line
-			HAL_UART_Transmit(&huart, rx_buffer, rx_index, HAL_MAX_DELAY);
-			rx_index = 0; // Reset buffer index
-		}*/
-		//HAL_UART_Receive_IT(&huart, &rx_buffer[rx_index], 1); // Enable UART receive interrupt again
-		//HAL_UART_Receive_DMA(huart, rx_buffer, RX_BUFFER_SIZE); // Start a new DMA reception
-		//HAL_UARTEx_ReceiveToIdle_DMA(huart, rx_buffer, 1); // Start a new DMA reception
-		//HAL_UART_Receive_IT(huart, rx_buffer, 1); // Enable UART receive interrupt again
-
-		//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
-
-
-
 	}
-	//HAL_UART_Receive_DMA(huart, rx_buffer, 10); //works
 }
 
 void float_to_hex(float a_value, uint8_t* a_out, int start_pos)
 {
-    /*//memcpy(a_out + start_pos, &a_value, sizeof(a_value));
-	uint8_t before_hex[4];
-	char after_hex[8];
-    memcpy(&before_hex, &a_value, sizeof(a_value));
-    for (int i = 0; i < 4; i++)
-    {
-    	auto nb_char_written = sprintf(after_hex + i*2, "%02X", before_hex + i);
-    }
-    memcpy(a_out + start_pos, after_hex, 8);*/
-
     uint32_t floatHex;
     memcpy(&floatHex, &a_value, sizeof(a_value));
 	sprintf((char*)(a_out + start_pos), "%08X", floatHex); // Convert to hexadecimal string
@@ -265,7 +210,6 @@ void float_to_hex(float a_value, uint8_t* a_out, int start_pos)
 
 void publish_encoders(UART_HandleTypeDef * huart2)
 {
-	//uint8_t out_msg[TX_BUFFER_SIZE_toto];
 	int start_pos = 0;
 	const int step = 8;
 
@@ -282,15 +226,12 @@ void publish_encoders(UART_HandleTypeDef * huart2)
 	start_pos += 2;
 
 	HAL_UART_Transmit_DMA(huart2, tx_e_line_buffer, start_pos);
-	//HAL_UART_Transmit_IT(huart2, out_msg, start_pos);
 }
 
 void publish_odom_lighter(UART_HandleTypeDef * huart2)
 {
 	int start_pos = 0;
 	const int step = 8;
-
-	// @TODO: output what was received
 
 	tx_o_line_buffer[start_pos] = 'o';
 	start_pos += 1;
@@ -310,8 +251,6 @@ void publish_odom_lighter(UART_HandleTypeDef * huart2)
 	start_pos += 1;
 
 	HAL_UART_Transmit_DMA(huart2, tx_o_line_buffer, start_pos);
-	//HAL_UART_Transmit_DMA(huart2, (uint8_t*)"\n", 1);
-	//HAL_UART_Transmit_IT(huart2, out_msg, start_pos);
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart){
@@ -322,11 +261,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	receiveUART(huart);
 }
 
-//void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
-//{
-//	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
-//}
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	if (htim->Instance == TIM15) {
 		MotorBoard::getDCMotor().update();
@@ -336,9 +270,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
 	}
 }
 
-
-
-//ros::NodeHandle MotorBoard::nh;
 DCMotorHardware MotorBoard::motorsHardware;
 DCMotor MotorBoard::motors;
 MCP3002 MotorBoard::currentReader;
@@ -359,9 +290,9 @@ void MotorBoard::set_odom(float a_x, float a_y, float a_theta)
 	theta_offset = a_theta - current_theta;
 }
 
-MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler//){
-	, UART_HandleTypeDef * huart2) :
-		huart2(huart2){
+MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler, UART_HandleTypeDef * huart2) :
+		huart2(huart2)
+{
 
 	while(false)
 	{
@@ -369,8 +300,7 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler//){
 		HAL_Delay(100);
 	}
 
-	HAL_Delay(1);//3000, 4000, 5000 works
-	//1, 500, 2000 does not work
+	HAL_Delay(1);
 
 	motorsHardware = DCMotorHardware(TIM1, TIM2, a_motorTimHandler, TIM_CHANNEL_4, a_motorTimHandler, TIM_CHANNEL_1);
 	currentReader = MCP3002();
@@ -381,44 +311,10 @@ MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler//){
 
 	set_odom(0, 0, 0);
 
-	//nh.initNode();
 	HAL_Delay(100);
-
-	//nh.advertise(odom_pub);
-	/*nh.advertise(asserv_pub);
-	nh.advertise(odom_light_pub);
-	nh.advertise(odom_lighter_pub);
-	nh.advertise(encoders_pub);
-	nh.advertise(motors_pub);
-	nh.subscribe(twist_sub);
-	nh.subscribe(parameters_sub);
-	nh.subscribe(enable_sub);
-	nh.subscribe(motors_cmd_sub);
-
-	nh.advertiseService(set_odom_srv);*/
-
-	//HAL_UARTEx_ReceiveToIdle_DMA(huart, rx_buffer, RX_BUFFER_SIZE); // Start a new DMA reception
-	HAL_Delay(100);
-	//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
-	uint8_t reinit = 1;
-	/*while (!nh.connected())
-	{
-	    nh.spinOnce();
-		if (HAL_GetTick()/1000 > reinit){
-			MotorBoard::getNodeHandle().getHardware()->reset_rbuf();
-			reinit++;
-		}
-	    HAL_Delay(MS_BETWEEN_UPDATES);
-	}*/
-
-
 }
 MotorBoard::MotorBoard() {}
 MotorBoard::~MotorBoard() {}
-
-/*ros::NodeHandle& MotorBoard::getNodeHandle(void) {
-	return nh;
-}*/
 
 DCMotor& MotorBoard::getDCMotor(void) {
 	return motors;
@@ -504,12 +400,6 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
     dist2 = ticksToMillimeters(diff_encoder2);
     dist = (dist1 + dist2) / 2.0f;
 
-    if (fabsf(dist) > 500.)
-    {
-        //printf("\n/!\\ HIGH SPEED DETECTED: %.2f /!\\\n\n", dist);
-        // exit(4);
-    }
-
     // Update static variables' values (current encoder values become old ones)
     last_encoder_left = encoder1;
     last_encoder_right = encoder2;
@@ -519,23 +409,20 @@ float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
 }
 
 void MotorBoard::update_inputs() {
-	// @todo
-	//nh.spinOnce();
+
 }
 
 void MotorBoard::update() {
 	nb_updates_without_message++;
 
+	// Check if the heart beat is OK
 	if (nb_updates_without_message>10)
 	{
 		// 1. Disable UART and DMA
 		HAL_UART_DMAStop(huart2); // Stop DMA associated with UART2
 		HAL_UART_DeInit(huart2); // Deinitialize UART2
 
-		// 2. Reset DMA Configuration
-		//HAL_DMA_DeInit(&hdma_usart2_rx); // Deinitialize DMA channel used for UART2 reception
-
-		// 3. Reset UART Configuration
+		// 2. Reset UART Configuration
 		huart2->Instance = USART2;
 		huart2->Init.BaudRate = 115200;
 		huart2->Init.WordLength = UART_WORDLENGTH_8B;
@@ -546,12 +433,12 @@ void MotorBoard::update() {
 		huart2->Init.OverSampling = UART_OVERSAMPLING_16;
 		huart2->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
 		huart2->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
 		while (HAL_UART_Init(huart2) != HAL_OK)
 		{
 			toggleLed();
 			HAL_Delay(100);
 		}
-		//MX_USART2_UART_Init(); // Reinitialize UART2 with default settings. This function should be generated by CubeMX or manually defined in your code.
 		while (HAL_UART_Receive_DMA(huart2, rx_buffer, 1) != HAL_OK)
 		{
 			toggleLed();
@@ -559,32 +446,15 @@ void MotorBoard::update() {
 		}
 	}
 
-	/*if (!nh.connected()){
-		return;
-	}*/
-
 	int16_t encoder_left = motors.get_encoder_ticks(M_L);
 	int16_t encoder_right = motors.get_encoder_ticks(M_R);
 
 	encoders_msg.encoder_left = encoder_left;
 	encoders_msg.encoder_right = encoder_right;
-	//encoders_msg.header.stamp = nh.now();
-
-	//encoders_pub.publish(&encoders_msg);//@todo
-	//publish_encoders(huart2);
+	//publish_encoders(huart2); // Currently, it is only possible to transmit one message
 
 	int32_t right_speed = motors.get_speed(M_R);
 	int32_t left_speed = motors.get_speed(M_L);
-
-	/*if (left_speed > 0){
-		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
-	}
-	else
-	{
-		HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_RESET); // Turn Off LED
-
-	}*/
-
 
 	float linear_dist = compute_linear_dist(encoder_left, encoder_right);
 
@@ -601,54 +471,19 @@ void MotorBoard::update() {
 	X += linear_dist * cos(current_theta_rad);
 	Y += linear_dist * sin(current_theta_rad);
 
-
-	//int32_t right_speed = motors.get_speed(M_R);
-	//int32_t left_speed = motors.get_speed(M_L);
-
-	/*odom_msg.header.frame_id = "odom";
-	odom_msg.header.stamp = nh.now();
-	odom_msg.header.seq = message_counter++;
-	odom_msg.child_frame_id = "base_link";
-
-	for (unsigned int i = 0; i < (sizeof(odom_msg.pose.covariance)/sizeof(*(odom_msg.pose.covariance))); i++){
-		odom_msg.pose.covariance[i] = 0;
-	}
-
-	odom_msg.pose.pose.position.x = X;
-	odom_msg.pose.pose.position.y = Y;
-	odom_msg.pose.pose.position.z = 0;
-
-	odom_msg.pose.pose.orientation = odom_quat;
-
-	//odom_msg.pose.pose.orientation.x = 0;
-	//odom_msg.pose.pose.orientation.y = 0;
-	//odom_msg.pose.pose.orientation.z = current_theta_rad;
-
-	for (unsigned int i = 0; i < (sizeof(odom_msg.twist.covariance)/sizeof(*(odom_msg.twist.covariance))); i++){
-		odom_msg.twist.covariance[i] = 0;
-	}
-
-	odom_msg.twist.twist.linear.x = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-	odom_msg.twist.twist.linear.y = 0;
-	odom_msg.twist.twist.linear.z = 0;
-
-	odom_msg.twist.twist.angular.x = 0;
-	odom_msg.twist.twist.angular.y = 0;
-
-
-	odom_msg.twist.twist.angular.z = odometry->getAngularSpeed();
-	odom_pub.publish(&odom_msg);*/
-
-	/*odom_lighter_msg.header.stamp = nh.now();
-	odom_lighter_msg.header.seq = message_counter++;
-	odom_lighter_msg.header.frame_id = "";*/
-	odom_lighter_msg.poseX = MotorBoard::getDCMotor().get_linear_speed_order();//X;
+	// Debug communication
+	/*odom_lighter_msg.poseX = MotorBoard::getDCMotor().get_linear_speed_order();//X;
 	odom_lighter_msg.poseY = 4.2f;//Y;
 	odom_lighter_msg.angleRz = nb_messages_received;//current_theta_rad;
 	odom_lighter_msg.speedVx = (float)test_message_received;//ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-	odom_lighter_msg.speedWz = encoder_left;//((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
+	odom_lighter_msg.speedWz = encoder_left;//((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s*/
+
+	odom_lighter_msg.poseX = X;
+	odom_lighter_msg.poseY = Y;
+	odom_lighter_msg.angleRz = current_theta_rad;
+	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
+	odom_lighter_msg.speedWz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
 	publish_odom_lighter(huart2);
-	//odom_lighter_pub.publish(&odom_lighter_msg);//@todo
 
 	if (false && message_counter%100 == 0)
 	{
@@ -682,11 +517,7 @@ void MotorBoard::update() {
 		motors_msg.current_right_accumulated = motors.get_accumulated_current(M_R);
 
 		//motors_pub.publish(&motors_msg);
-
-
 	}
-
-	//nh.spinOnce();
 }
 
 void setup()
@@ -707,49 +538,26 @@ void toggleLed()
 
 void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler, UART_HandleTypeDef * huart2)
 {
-	//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	MotorBoard myboard = MotorBoard(a_motorTimHandler, huart2);
 
 	__HAL_UART_CLEAR_OREFLAG(huart2);
 
-//	while (1)
-//	{
-//		// Attempt to establish UART connection
-//		if (HAL_UART_Transmit(huart2, (uint8_t*)"Hello PC\r\n", strlen("Hello PC\r\n"), HAL_MAX_DELAY) == HAL_OK)
-//		{
-//			// Connection established, break out of the loop
-//			break;
-//		}
-//		else
-//		{
-//			// Error occurred, handle the error (e.g., LED blinking, logging, etc.)
-//			// For simplicity, let's toggle an LED to indicate error
-//			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); // Toggle LED on GPIOA Pin 5
-//
-//			// Wait for a short duration before attempting again
-//			HAL_Delay(100); // Adjust this delay according to your application's needs
-//		}
-//	}
+
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
 	int32_t waiting_time = 100;
-	//HAL_UARTEx_ReceiveToIdle_DMA(huart2, rx_buffer, RX_BUFFER_SIZE);
 
-
+	// Make sure that the Uart/DMA is correctly initialized, or signal it
 	while (HAL_UART_Receive_DMA(huart2, rx_buffer, 1) != HAL_OK)
 	{
 		toggleLed();
 		HAL_Delay(300);
 	}
 
-	//HAL_UART_Receive_IT(huart2, rx_buffer, 1);
-
-	//HAL_UARTEx_ReceiveToIdle_DMA(huart2, rx_buffer, 10); // Start a new DMA reception
 	while(true) {
 		myboard.update();
 
 		for(int ii = 0; ii< 10 ; ii++){
 			myboard.update_inputs();
-
 
 			// Debug messages
 
@@ -760,10 +568,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 			asserv_msg.max_current_right = static_cast<float>(MotorBoard::getDCMotor().get_voltage(M_R))/500;
 			asserv_msg.max_current_left = static_cast<float>(MotorBoard::getDCMotor().get_linear_speed_order())/500;
 
-
 			asserv_pub.publish(&asserv_msg);*/
-
-
 
 			HAL_Delay(waiting_time);
 		}

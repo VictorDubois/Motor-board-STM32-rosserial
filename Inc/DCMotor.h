@@ -181,8 +181,8 @@ private:
 	int32_t accumulated_current[NB_MOTORS];
 	int32_t current[NB_MOTORS];
 
-	volatile int32_t stopped_timeout;
-	volatile int32_t stopped_timeouts[NB_MOTORS];
+	volatile uint32_t stopped_timeout;
+	volatile uint32_t stopped_timeouts[NB_MOTORS];
 
 	int32_t refined_speed_order[NB_MOTORS];
 
