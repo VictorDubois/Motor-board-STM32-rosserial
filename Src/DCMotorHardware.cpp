@@ -46,7 +46,7 @@ uint32_t DCMotorHardware::getMilliSecondsElapsed() {
 
 void DCMotorHardware::setPWM(const int32_t pwm_left, const int32_t pwm_right) {
 	// Write dir according to pwm sign
-	/*if (pwm_left > 0) {
+	if (pwm_left > 0) {
 		HAL_GPIO_WritePin(dir_left_gpio_bank, dir_left_gpio, GPIO_PIN_SET);
 	}
 	else {
@@ -58,7 +58,7 @@ void DCMotorHardware::setPWM(const int32_t pwm_left, const int32_t pwm_right) {
 	}
 	else {
 		HAL_GPIO_WritePin(dir_right_gpio_bank, dir_right_gpio, GPIO_PIN_RESET);
-	}*/
+	}
 
 	// Limit to pwm boundaries and write PWM
 	int32_t command = 0;
