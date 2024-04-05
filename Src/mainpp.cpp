@@ -26,7 +26,7 @@ float test_message_received = 0;
 unsigned int nb_updates_without_message = 0;
 
 
-float get_float(uint8_t* a_string, int a_beginning)
+float get_float(const uint8_t* a_string, const int a_beginning)
 {
 	char hexValue[8];
 	strncpy(hexValue, (char*)a_string + a_beginning, 8);
@@ -36,7 +36,7 @@ float get_float(uint8_t* a_string, int a_beginning)
     return floatValue;
 }
 
-void motors_cmd_hex_cb(uint8_t* a_message)
+void motors_cmd_hex_cb(const uint8_t* a_message)
 {
 	krabi_msgs::motors_cmd motors_cmd_msg;
 	int i = 0;
@@ -52,7 +52,7 @@ void motors_cmd_hex_cb(uint8_t* a_message)
     motors_cmd_cb(motors_cmd_msg);
 }
 
-void parameters_hex_cb(uint8_t* a_message)
+void parameters_hex_cb(const uint8_t* a_message)
 {
 	krabi_msgs::motors_parameters motors_parameters_msg;
     int i = 0;
@@ -65,7 +65,7 @@ void parameters_hex_cb(uint8_t* a_message)
     parameters_cb(motors_parameters_msg);
 }
 
-void cmd_vel_hex_cb(uint8_t* a_message)
+void cmd_vel_hex_cb(const uint8_t* a_message)
 {
 	geometry_msgs::Twist twist_msg;
     int i = 0;
@@ -77,7 +77,7 @@ void cmd_vel_hex_cb(uint8_t* a_message)
     cmd_vel_cb(twist_msg);
 }
 
-void enable_motor_hex_cb(uint8_t* a_message)
+void enable_motor_hex_cb(const uint8_t* a_message)
 {
 	std_msgs::Bool enable_msg;
     int i = 0;
@@ -90,7 +90,7 @@ void enable_motor_hex_cb(uint8_t* a_message)
 
 void read_serial()
 {
-	HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
+	//HAL_GPIO_WritePin(DIR_B_GPIO_Port, DIR_B_Pin, GPIO_PIN_SET); // Turn On LED
 	nb_updates_without_message = 0;
 
 
@@ -158,7 +158,6 @@ void enable_motor_cb(const std_msgs::Bool& enable)
 	}
 }
 
-
 void receiveUART(UART_HandleTypeDef *huart){
 	if (huart->Instance == USART2) {
 		test_message_received++;
@@ -201,7 +200,7 @@ void receiveUART(UART_HandleTypeDef *huart){
 	}
 }
 
-void float_to_hex(float a_value, uint8_t* a_out, int start_pos)
+void float_to_hex(const float a_value, uint8_t* a_out, const int start_pos)
 {
     uint32_t floatHex;
     memcpy(&floatHex, &a_value, sizeof(a_value));
@@ -412,7 +411,7 @@ void MotorBoard::update_inputs() {
 
 }
 
-void MotorBoard::resetUart()
+void doResetUart(UART_HandleTypeDef * huart2)
 {
 	// 1. Disable UART and DMA
 	HAL_UART_DMAStop(huart2); // Stop DMA associated with UART2
@@ -442,11 +441,16 @@ void MotorBoard::resetUart()
 	}
 }
 
+void MotorBoard::resetUart()
+{
+	doResetUart(huart2);
+}
+
 void MotorBoard::update() {
 	nb_updates_without_message++;
 
 	// Check if the heart beat is OK
-	if (nb_updates_without_message>10)
+	if (nb_updates_without_message>100)
 	{
 		this->resetUart();
 	}
@@ -517,11 +521,10 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 {
 	MotorBoard myboard = MotorBoard(a_motorTimHandler, huart2);
 
-	__HAL_UART_CLEAR_OREFLAG(huart2);
-
+	__HAL_UART_CLEAR_OREFLAG(huart2); // Not sure if actually needed
 
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
-	int32_t waiting_time = 100;
+	uint32_t waiting_time = 100;
 
 	// Make sure that the Uart/DMA is correctly initialized, or signal it
 	while (HAL_UART_Receive_DMA(huart2, rx_buffer, 1) != HAL_OK)
@@ -533,11 +536,6 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	while(true) {
 		myboard.update();
 
-		for(int ii = 0; ii< 10 ; ii++){
-			myboard.update_inputs();
-
-
-			HAL_Delay(waiting_time);
-		}
+		HAL_Delay(waiting_time);
 	}
 }

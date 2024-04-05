@@ -86,6 +86,8 @@ private:
 	UART_HandleTypeDef * huart2;
 	void resetUart();
 };
+
+void doResetUart(UART_HandleTypeDef * huart2);
 void toggleLed();
 
 #ifdef __cplusplus
