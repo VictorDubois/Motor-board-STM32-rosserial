@@ -24,7 +24,6 @@ unsigned int offset_message_already_received = 0;
 int nb_messages_received = 0;
 float test_message_received = 0;
 unsigned int nb_updates_without_message = 0;
-unsigned int index_last_message_read = 0;
 
 
 float get_float(const uint8_t* a_string, const int a_beginning)
@@ -161,24 +160,9 @@ void enable_motor_cb(const std_msgs::Bool& enable)
 
 void receiveUART(UART_HandleTypeDef *huart){
 	if (huart->Instance == USART2) {
-
-		auto l_last_dma_index = __HAL_DMA_GET_COUNTER(huart->hdmarx);
-
-		auto l_index = index_last_message_read;
-
-		while(l_index < l_last_dma_index)
-		{
-			l_index++;
-			if (rx_buffer[l_index] == '\n' || rx_buffer[l_index] == '\r')
-			{
-				strncpy((char*) rx_line_buffer, (char*)rx_buffer + index_last_message_read , l_index - index_last_message_read);
-				read_serial();
-				index_last_message_read = l_index;
-			}
-		}
 		test_message_received++;
 
-		/*int dma_buffer_offset = 0;
+		int dma_buffer_offset = 0;
 
 		int i = 0;
 		while (i < RX_BUFFER_SIZE)
@@ -212,7 +196,7 @@ void receiveUART(UART_HandleTypeDef *huart){
 				// Buffer overflow, handle error or reset the buffer
 				offset_message_already_received = 0;
 			}
-		}*/
+		}
 	}
 }
 
@@ -269,11 +253,11 @@ void publish_odom_lighter(UART_HandleTypeDef * huart2)
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart){
-	//receiveUART(huart);
+	receiveUART(huart);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-	//receiveUART(huart);
+	receiveUART(huart);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
@@ -464,8 +448,6 @@ void MotorBoard::resetUart()
 
 void MotorBoard::update() {
 	nb_updates_without_message++;
-
-	receiveUART(huart2);
 
 	// Check if the heart beat is OK
 	if (nb_updates_without_message>100)
