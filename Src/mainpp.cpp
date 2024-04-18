@@ -13,13 +13,11 @@ extern "C" {
 #include <string>
 #include "math.h"
 
-#define TX_LINE_BUFFER_SIZE 100
-#define RX_LINE_BUFFER_SIZE 100
-#define RX_BUFFER_SIZE 1
-uint8_t rx_buffer[RX_BUFFER_SIZE];
-uint8_t rx_line_buffer[RX_LINE_BUFFER_SIZE];
-uint8_t tx_e_line_buffer[TX_LINE_BUFFER_SIZE];
-uint8_t tx_o_line_buffer[TX_LINE_BUFFER_SIZE];
+#define UART_MSG_SIZE 1+ 8*10 + 1
+uint8_t rx_buffer[UART_MSG_SIZE];
+uint8_t rx_line_buffer[UART_MSG_SIZE];
+uint8_t tx_e_line_buffer[UART_MSG_SIZE];
+uint8_t tx_o_line_buffer[UART_MSG_SIZE];
 unsigned int offset_message_already_received = 0;
 int nb_messages_received = 0;
 float test_message_received = 0;
@@ -28,8 +26,9 @@ unsigned int nb_updates_without_message = 0;
 
 float get_float(const uint8_t* a_string, const int a_beginning)
 {
-	char hexValue[8];
-	strncpy(hexValue, (char*)a_string + a_beginning, 8);
+	char hexValue[9];
+	strncpy(hexValue, (const char*)a_string + a_beginning, 8);
+	hexValue[8] = '\0'; // Null-terminate the string explicitly
     uint32_t floatHex = strtoul(hexValue, NULL, 16); // Convert hexadecimal string to unsigned long
     float floatValue;
     memcpy(&floatValue, &floatHex, sizeof(floatValue)); // Convert unsigned long to float
@@ -161,8 +160,10 @@ void enable_motor_cb(const std_msgs::Bool& enable)
 void receiveUART(UART_HandleTypeDef *huart){
 	if (huart->Instance == USART2) {
 		test_message_received++;
+		memcpy(rx_line_buffer, rx_buffer, UART_MSG_SIZE);
+		read_serial();
 
-		int dma_buffer_offset = 0;
+		/*int dma_buffer_offset = 0;
 
 		int i = 0;
 		while (i < RX_BUFFER_SIZE)
@@ -196,8 +197,10 @@ void receiveUART(UART_HandleTypeDef *huart){
 				// Buffer overflow, handle error or reset the buffer
 				offset_message_already_received = 0;
 			}
-		}
+		}*/
 	}
+
+
 }
 
 void float_to_hex(const float a_value, uint8_t* a_out, const int start_pos)
@@ -434,7 +437,7 @@ void doResetUart(UART_HandleTypeDef * huart2)
 		toggleLed();
 		HAL_Delay(100);
 	}
-	while (HAL_UART_Receive_DMA(huart2, rx_buffer, 1) != HAL_OK)
+	while (HAL_UART_Receive_DMA(huart2, rx_buffer, UART_MSG_SIZE) != HAL_OK)
 	{
 		toggleLed();
 		HAL_Delay(300);
@@ -448,6 +451,13 @@ void MotorBoard::resetUart()
 
 void MotorBoard::update() {
 	nb_updates_without_message++;
+
+	if (test_message_received - nb_messages_received > 200)
+	{
+		this->resetUart();
+		test_message_received = 0;
+		nb_messages_received = 0;
+	}
 
 	// Check if the heart beat is OK
 	if (nb_updates_without_message>100)
@@ -492,6 +502,7 @@ void MotorBoard::update() {
 	odom_lighter_msg.angleRz = current_theta_rad;
 	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
 	odom_lighter_msg.speedWz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
+
 	publish_odom_lighter(huart2);
 
 	if (false && message_counter%100 == 0)
@@ -527,7 +538,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	uint32_t waiting_time = 100;
 
 	// Make sure that the Uart/DMA is correctly initialized, or signal it
-	while (HAL_UART_Receive_DMA(huart2, rx_buffer, 1) != HAL_OK)
+	while (HAL_UART_Receive_DMA(huart2, rx_buffer, UART_MSG_SIZE) != HAL_OK)
 	{
 		toggleLed();
 		HAL_Delay(300);
