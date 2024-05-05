@@ -483,16 +483,18 @@ void MotorBoard::resetUart()
 void MotorBoard::update() {
 	nb_updates_without_message++;
 
-	if (test_message_received - nb_messages_received > 200)
+	if (test_message_received - nb_messages_received > 4000)
 	{
+		toggleLed();
 		this->resetUart();
 		test_message_received = 0;
 		nb_messages_received = 0;
 	}
 
 	// Check if the heart beat is OK
-	if (nb_updates_without_message>100)
+	if (nb_updates_without_message>1000)
 	{
+		toggleLed();
 		this->resetUart();
 	}
 
@@ -566,7 +568,7 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 	__HAL_UART_CLEAR_OREFLAG(huart2); // Not sure if actually needed
 
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
-	uint32_t waiting_time = 100;
+	uint32_t waiting_time = 5;
 
 	// Make sure that the Uart/DMA is correctly initialized, or signal it
 	while (HAL_UART_Receive_DMA(huart2, rx_buffer, UART_MSG_SIZE) != HAL_OK)
