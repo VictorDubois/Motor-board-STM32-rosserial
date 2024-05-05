@@ -230,6 +230,28 @@ void publish_encoders(UART_HandleTypeDef * huart2)
 	HAL_UART_Transmit_DMA(huart2, tx_e_line_buffer, start_pos);
 }
 
+// Define CRC parameters
+#define CRC_POLYNOMIAL 0x1021
+#define CRC_INITIAL_VALUE 0xFFFF
+
+// Function to calculate CRC
+uint16_t calculate_crc(const uint8_t *data, int length) {
+    uint16_t crc = CRC_INITIAL_VALUE;
+
+    for (int i = 0; i < length; i++) {
+        crc ^= data[i] << 8;
+        for (int j = 0; j < 8; j++) {
+            if (crc & 0x8000) {
+                crc = (crc << 1) ^ CRC_POLYNOMIAL;
+            } else {
+                crc <<= 1;
+            }
+        }
+    }
+
+    return crc;
+}
+
 void publish_odom_lighter(UART_HandleTypeDef * huart2)
 {
 	int start_pos = 0;
@@ -249,8 +271,17 @@ void publish_odom_lighter(UART_HandleTypeDef * huart2)
 	start_pos += step;
 	float_to_hex(odom_lighter_msg.speedWz, tx_o_line_buffer, start_pos);
 	start_pos += step;
+
+	// Calculate CRC
+	uint16_t crc = calculate_crc(tx_o_line_buffer, start_pos);
+	tx_o_line_buffer[start_pos] = crc & 0xFF; // Low byte
+	tx_o_line_buffer[start_pos + 1] = crc >> 8; // High byte
+	start_pos += 2;
+
+	// Add and of line
 	tx_o_line_buffer[start_pos] = '\n';
 	start_pos += 1;
+
 
 	HAL_UART_Transmit_DMA(huart2, tx_o_line_buffer, start_pos);
 }
