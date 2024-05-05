@@ -496,6 +496,7 @@ void MotorBoard::update() {
 	{
 		toggleLed();
 		this->resetUart();
+		nb_updates_without_message = 0;
 	}
 
 	int16_t encoder_left = motors.get_encoder_ticks(M_L);
