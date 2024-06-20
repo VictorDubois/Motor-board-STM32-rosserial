@@ -17,7 +17,7 @@
 // 137 <=> 480mA
 // "ONE_VOLT" factor = measure/("ONE_AMP" factor * real current)
 #define ONE_VOLT        774//2048/5 // TODO find the actual value
-#define ONE_AMP         0.377*ONE_VOLT
+#define ONE_AMP         (0.377*ONE_VOLT)
 
 #ifndef MCP3002_H_
 #define MCP3002_H_
