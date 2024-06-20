@@ -46,7 +46,12 @@ ros::Publisher odom_lighter_pub("odom_lighter", &odom_lighter_msg);*/
 float get_orientation_float(int32_t encoder1, int32_t encoder2);
 constexpr float ticksToMillimeters(int32_t ticks);
 constexpr int32_t millimetersToTicks(float millimeters);
-
+constexpr int32_t metersToTicks(float meters);
+constexpr float ticksToMeters(int32_t ticks);
+constexpr int32_t degreesToTicks(float degrees);
+constexpr float ticksToDegrees(int32_t ticks);
+constexpr int32_t radsToTicks(float rads);
+constexpr float ticksToRads(int32_t ticks);
 
 void motors_cmd_cb(const krabi_msgs::motors_cmd &motors_cmd_msg);
 void cmd_vel_cb(const geometry_msgs::Twist& twist);

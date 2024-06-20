@@ -147,7 +147,7 @@ void parameters_cb(const krabi_msgs::motors_parameters& a_parameters)
 
 void cmd_vel_cb(const geometry_msgs::Twist& twist)
 {
-	MotorBoard::getDCMotor().set_speed_order(twist.linear.x, -twist.angular.z);
+	MotorBoard::getDCMotor().set_speed_order(metersToTicks(twist.linear.x), radsToTicks(-twist.angular.z));
 }
 
 void enable_motor_cb(const std_msgs::Bool& enable)
@@ -373,12 +373,42 @@ constexpr float ticksToMillimeters(int32_t ticks)
 	return (DIST_PER_REVOLUTION * (float)ticks / TICKS_PER_REVOLUTION);
 }
 
+constexpr float ticksToMeters(int32_t ticks)
+{
+	ticksToMillimeters(ticks) / 1000.f;
+}
+
 
 constexpr int32_t millimetersToTicks(float millimeters)
 {
 	return static_cast<int32_t>(millimeters * TICKS_PER_REVOLUTION/DIST_PER_REVOLUTION);
 }
 
+constexpr int32_t metersToTicks(float meters)
+{
+	millimetersToTicks(meters * 1000);
+}
+
+
+
+constexpr int32_t degreesToTicks(float degrees)
+{
+	return degrees * TICKS_PER_DEG;
+}
+constexpr int32_t radsToTicks(float rads)
+{
+	return degreesToTicks(rads*180/M_PI);
+}
+
+constexpr float ticksToDegrees(int32_t ticks)
+{
+	return ticks/TICKS_PER_DEG;
+}
+
+constexpr float ticksToRads(int32_t ticks)
+{
+	return ticksToDegrees(ticks) * M_PI/180.f;
+}
 /*
         Given current value of both encoders
         return the linear dist by approximating it as the average of both wheels' linear distances.
@@ -488,8 +518,8 @@ void MotorBoard::update() {
 	odom_lighter_msg.poseX = X;
 	odom_lighter_msg.poseY = Y;
 	odom_lighter_msg.angleRz = current_theta_rad;
-	odom_lighter_msg.speedVx = ticksToMillimeters((left_speed+right_speed)/2)/1000.f;
-	odom_lighter_msg.speedWz = ((right_speed - left_speed)/TICKS_PER_DEG)*M_PI/180; // rad/s
+	odom_lighter_msg.speedVx = ticksToMeters((left_speed+right_speed)/2);
+	odom_lighter_msg.speedWz = ticksToRads(right_speed - left_speed); // rad/s
 
 	publish_odom_lighter(huart2);
 
