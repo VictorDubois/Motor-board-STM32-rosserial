@@ -7,6 +7,7 @@
 
 #include "DCMotor.h"
 #include <cmath>        // std::abs
+#include <constants.h>
 
 
 template <class T>
@@ -17,6 +18,24 @@ T get_linear(T* array) {
 template <class T>
 T get_angular(T* array) {
 	return (array[M_L] - array[M_R])/2;
+}
+
+int32_t fixOverflow(int16_t a_after, int32_t before)
+{
+    int32_t after = (int32_t) a_after;
+    if (after - before > TICKS_half_OVERFLOW)
+    {
+        // printf("before (%ld) - after (%ld) > TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
+        // before, after, TICKS_half_OVERFLOW, after - before - TICKS_OVERFLOW);
+        return after - before - TICKS_OVERFLOW;
+    }
+    if (after - before < -TICKS_half_OVERFLOW)
+    {
+        // printf("after (%ld) - before (%ld) < -TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
+        // after, before, -TICKS_half_OVERFLOW, after - before + TICKS_OVERFLOW);
+        return after - before + TICKS_OVERFLOW;
+    }
+    return after - before;
 }
 
 DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardware(a_hardware), current_reader(a_current_reader) {
@@ -47,6 +66,7 @@ DCMotor::DCMotor(DCMotorHardware* a_hardware, MCP3002* a_current_reader) : hardw
 		stopped_timeouts[i] = 0;
 		last_speed_error[i] = 0;
 		override_pwms[i] = 0;
+		last_encoder_value[i] = hardware->getTicks(i);
 	}
 
 	linear_speed_order = 0;
@@ -222,7 +242,10 @@ int32_t DCMotor::get_speed(uint8_t motor_id) {
 }
 
 int16_t DCMotor::get_encoder_ticks(uint8_t encoder_id) {
-	return hardware->getTicks(encoder_id);
+	int32_t l_encoder_value = hardware->getTicks(encoder_id);
+	l_encoder_value = fixOverflow(l_encoder_value, last_encoder_value[encoder_id]);
+	last_encoder_value[encoder_id] = l_encoder_value;
+	return l_encoder_value;
 }
 
 int32_t DCMotor::get_accumulated_current(uint8_t motor_id) {

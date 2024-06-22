@@ -44,8 +44,6 @@ ros::Publisher odom_lighter_pub("odom_lighter", &odom_lighter_msg);*/
 //ros::Publisher asserv_pub("asserv", &asserv_msg);
 
 float get_orientation_float(int32_t encoder1, int32_t encoder2);
-int fixOverflow(long after, long before);
-int32_t fixOverflowAngular(int16_t after, int32_t before);
 constexpr float ticksToMillimeters(int32_t ticks);
 constexpr int32_t millimetersToTicks(float millimeters);
 constexpr int32_t metersToTicks(float meters);

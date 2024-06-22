@@ -368,41 +368,6 @@ float get_orientation_float(int32_t encoder1, int32_t encoder2)
         return (360.f + absolute_orientation); // reminder: abs_ori is < 0 here
 }
 
-int32_t fixOverflowAngular(int16_t a_after, int32_t before)
-{
-	int32_t after = a_after;
-    while (after - before > TICKS_half_OVERFLOW)
-    {
-        // printf("before (%ld) - after (%ld) > TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
-        // before, after, TICKS_half_OVERFLOW, after - before - TICKS_OVERFLOW);
-        after -= TICKS_OVERFLOW;
-    }
-    while (after - before < -TICKS_half_OVERFLOW)
-    {
-        // printf("after (%ld) - before (%ld) < -TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
-        // after, before, -TICKS_half_OVERFLOW, after - before + TICKS_OVERFLOW);
-        after += TICKS_OVERFLOW;
-    }
-    return after;
-}
-
-int fixOverflow(long after, long before)
-{
-    if (after - before > TICKS_half_OVERFLOW)
-    {
-        // printf("before (%ld) - after (%ld) > TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
-        // before, after, TICKS_half_OVERFLOW, after - before - TICKS_OVERFLOW);
-        return after - before - TICKS_OVERFLOW;
-    }
-    if (after - before < -TICKS_half_OVERFLOW)
-    {
-        // printf("after (%ld) - before (%ld) < -TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
-        // after, before, -TICKS_half_OVERFLOW, after - before + TICKS_OVERFLOW);
-        return after - before + TICKS_OVERFLOW;
-    }
-    return after - before;
-}
-
 constexpr float ticksToMillimeters(int32_t ticks)
 {
 	return (DIST_PER_REVOLUTION * (float)ticks / TICKS_PER_REVOLUTION);
@@ -452,15 +417,10 @@ constexpr float ticksToRads(int32_t ticks)
 float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
 {
     float dist1, dist2, dist;
-    int diff_encoder1, diff_encoder2;
-
-    // Compute difference in nb of ticks between last measurements and now
-    diff_encoder1 = fixOverflow(encoder1, last_encoder_left);
-    diff_encoder2 = fixOverflow(encoder2, last_encoder_right);
 
     // Compute each wheel's dist and approximate linear dist as their average
-    dist1 = ticksToMillimeters(diff_encoder1);
-    dist2 = ticksToMillimeters(diff_encoder2);
+    dist1 = ticksToMillimeters(encoder1);
+    dist2 = ticksToMillimeters(encoder2);
     dist = (dist1 + dist2) / 2.0f;
 
     // Update static variables' values (current encoder values become old ones)
@@ -540,13 +500,7 @@ void MotorBoard::update() {
 	int32_t left_speed = motors.get_speed(M_L);
 
 	float linear_dist = compute_linear_dist(encoder_left, encoder_right);
-
-    // Compute difference in nb of ticks between last measurements and now
-    int32_t fixed_angular_encoder_left = fixOverflowAngular(encoder_left, last_encoder_left_angular);
-    int32_t fixed_angular_encoder_right = fixOverflowAngular(encoder_right, last_encoder_right_angular);
-	last_encoder_left_angular = fixed_angular_encoder_left;
-	float current_theta = get_orientation_float(fixed_angular_encoder_left, fixed_angular_encoder_right);
-	last_encoder_right_angular = fixed_angular_encoder_right;
+	float current_theta = get_orientation_float(encoder_left, encoder_right);
 	current_theta += theta_offset;
 
 	float current_theta_rad = current_theta * M_PI / 180.f;
