@@ -375,7 +375,7 @@ constexpr float ticksToMillimeters(int32_t ticks)
 
 constexpr float ticksToMeters(int32_t ticks)
 {
-	ticksToMillimeters(ticks) / 1000.f;
+	return ticksToMillimeters(ticks) / 1000.f;
 }
 
 
@@ -386,7 +386,7 @@ constexpr int32_t millimetersToTicks(float millimeters)
 
 constexpr int32_t metersToTicks(float meters)
 {
-	millimetersToTicks(meters * 1000);
+	return millimetersToTicks(meters * 1000);
 }
 
 
