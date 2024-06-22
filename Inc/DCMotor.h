@@ -37,6 +37,8 @@
 #define M_PI 3.14159265359
 #endif
 
+int32_t fixOverflow(int16_t after, int32_t before);
+
 class DCMotor
 {
 
@@ -151,6 +153,7 @@ public:
 
 	int32_t get_linear_speed_order() {return linear_speed_order;}
 	int32_t get_angular_speed_order() {return angular_speed_order;}
+
 private:
 	float dt;
 	volatile int32_t speed_order[NB_MOTORS];
@@ -185,6 +188,7 @@ private:
 	volatile uint32_t stopped_timeouts[NB_MOTORS];
 
 	int32_t refined_speed_order[NB_MOTORS];
+	int32_t last_encoder_value[NB_MOTORS];
 
 	int32_t max_speed;
 	int32_t max_speed_delta;
