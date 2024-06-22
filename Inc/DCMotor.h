@@ -16,11 +16,6 @@
 #define M_R             1
 #define NB_MOTORS 		2
 
-#define ENC_RESO        1024 * 4
-
-#define ENC_BUF_SIZE 65536
-#define HALF_ENC_BUF_SIZE 32768
-
 #define SAMPLING_USEC   10000 //microseconds
 #define SAMPLING_PER_SEC 1e6/SAMPLING_USEC // Hz
 
@@ -38,6 +33,7 @@
 #endif
 
 int32_t fixOverflow(int16_t after, int32_t before);
+int32_t diffWithFixOverflow(int32_t after, int32_t before);
 
 class DCMotor
 {

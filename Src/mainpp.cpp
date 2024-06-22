@@ -417,10 +417,15 @@ constexpr float ticksToRads(int32_t ticks)
 float MotorBoard::compute_linear_dist(const long encoder1, const long encoder2)
 {
     float dist1, dist2, dist;
+    int diff_encoder1, diff_encoder2;
+
+    // Compute difference in nb of ticks between last measurements and now
+    diff_encoder1 = diffWithFixOverflow(encoder1, last_encoder_left);
+    diff_encoder2 = diffWithFixOverflow(encoder2, last_encoder_right);
 
     // Compute each wheel's dist and approximate linear dist as their average
-    dist1 = ticksToMillimeters(encoder1);
-    dist2 = ticksToMillimeters(encoder2);
+    dist1 = ticksToMillimeters(diff_encoder1);
+    dist2 = ticksToMillimeters(diff_encoder2);
     dist = (dist1 + dist2) / 2.0f;
 
     // Update static variables' values (current encoder values become old ones)

@@ -22,7 +22,24 @@ T get_angular(T* array) {
 
 int32_t fixOverflow(int16_t a_after, int32_t before)
 {
-    int32_t after = (int32_t) a_after;
+	int32_t after = a_after;
+    while (after - before > TICKS_half_OVERFLOW)
+    {
+        // printf("before (%ld) - after (%ld) > TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
+        // before, after, TICKS_half_OVERFLOW, after - before - TICKS_OVERFLOW);
+        after -= TICKS_OVERFLOW;
+    }
+    while (after - before < -TICKS_half_OVERFLOW)
+    {
+        // printf("after (%ld) - before (%ld) < -TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
+        // after, before, -TICKS_half_OVERFLOW, after - before + TICKS_OVERFLOW);
+        after += TICKS_OVERFLOW;
+    }
+    return after;
+}
+
+int32_t diffWithFixOverflow(int32_t after, int32_t before)
+{
     if (after - before > TICKS_half_OVERFLOW)
     {
         // printf("before (%ld) - after (%ld) > TICKS_half_OVERFLOW (%d). Returning %ld\n\n\n",
@@ -211,16 +228,9 @@ void DCMotor::get_speed(){
 
     for(int i = 0; i < NB_MOTORS; i++){
     	int32_t new_position = hardware->getTicks(i);
-        current_speed =  new_position - last_position[i];
-        last_position[i] = new_position;
 
-        //rebase
-        if( current_speed > HALF_ENC_BUF_SIZE) {
-        	current_speed -= ENC_BUF_SIZE;
-        }
-        if( current_speed < -HALF_ENC_BUF_SIZE ) {
-        	current_speed += ENC_BUF_SIZE;
-        }
+    	current_speed = diffWithFixOverflow(new_position, last_position[i]);
+    	last_position[i] = new_position;
 
         speed[i] = current_speed * SAMPLING_PER_SEC;// ticks per second
     }
