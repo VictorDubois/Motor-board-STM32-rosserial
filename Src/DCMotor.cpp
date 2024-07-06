@@ -257,6 +257,10 @@ void DCMotor::limitLinearFirst(int32_t& linear, int32_t& angular, const int32_t 
 }
 
 
+void DCMotor::integrator_backstepping(){
+
+}
+
 void DCMotor::control_ramp_speed_polar(void) {
 	// Ziegler Nichols: Ku = 0.1, Tu = 0.0844
 	//float linear_Ku = 0.063f;//0.085f;//0.1;
