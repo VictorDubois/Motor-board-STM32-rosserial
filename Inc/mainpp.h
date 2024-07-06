@@ -23,6 +23,7 @@
 #include <MCP3002.h>
 #include "stm32f3xx_hal.h"
 #include "DCMotor.h"
+#include <IntegratorBackstepping.h>
 
 #define UPDATE_FREQ 10
 #define MS_BETWEEN_UPDATES 1000/UPDATE_FREQ
@@ -58,7 +59,7 @@ void enable_motor_cb(const std_msgs::Bool& enable);
 class MotorBoard
 {
 public:
-	MotorBoard(TIM_HandleTypeDef* motorTimHandler, UART_HandleTypeDef * huart2);
+	MotorBoard(TIM_HandleTypeDef* motorTimHandler, UART_HandleTypeDef * huart2, IntegratorBackstepping*integrator_backstepping);
 	MotorBoard();
 	~MotorBoard();
 
@@ -85,6 +86,7 @@ private:
 	volatile static long long message_counter;
 	UART_HandleTypeDef * huart2;
 	void resetUart();
+	IntegratorBackstepping* integrator_backstepping;
 };
 
 void doResetUart(UART_HandleTypeDef * huart2);

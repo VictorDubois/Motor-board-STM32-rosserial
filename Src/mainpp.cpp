@@ -12,6 +12,7 @@ extern "C" {
 #include <string.h>
 #include <string>
 #include "math.h"
+#include "IntegratorBackstepping.h"
 
 #define UART_MSG_SIZE 1+ 8*10 + 1
 uint8_t rx_buffer[UART_MSG_SIZE];
@@ -22,6 +23,7 @@ unsigned int offset_message_already_received = 0;
 int nb_messages_received = 0;
 float test_message_received = 0;
 unsigned int nb_updates_without_message = 0;
+
 
 
 float get_float(const uint8_t* a_string, const int a_beginning)
@@ -323,8 +325,8 @@ void MotorBoard::set_odom(float a_x, float a_y, float a_theta)
 	theta_offset = a_theta - current_theta;
 }
 
-MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler, UART_HandleTypeDef * huart2) :
-		huart2(huart2)
+MotorBoard::MotorBoard(TIM_HandleTypeDef* a_motorTimHandler, UART_HandleTypeDef * huart2, IntegratorBackstepping* integrator_backstepping) :
+		huart2(huart2), integrator_backstepping(integrator_backstepping)
 {
 
 	while(false)
@@ -549,6 +551,14 @@ void MotorBoard::update() {
 
 		//motors_pub.publish(&motors_msg);
 	}
+
+	this->integrator_backstepping->set_pos(X,Y,current_theta_rad);
+	float linear_velo;
+	float angular_velo;
+	this->integrator_backstepping->set_command(X+0.00005, Y);
+	this->integrator_backstepping->calculate(linear_velo, angular_velo);
+	this->motors.set_speed_order(linear_velo, angular_velo);
+
 }
 
 void setup()
@@ -564,12 +574,13 @@ void toggleLed()
 
 void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler, UART_HandleTypeDef * huart2)
 {
-	MotorBoard myboard = MotorBoard(a_motorTimHandler, huart2);
+	const uint32_t waiting_time = 5;
+	IntegratorBackstepping integrator_backstepping(1, 1, 1, 1, 0.00001f, waiting_time);
+	MotorBoard myboard = MotorBoard(a_motorTimHandler, huart2, &integrator_backstepping);
 
 	__HAL_UART_CLEAR_OREFLAG(huart2); // Not sure if actually needed
 
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
-	uint32_t waiting_time = 5;
 
 	// Make sure that the Uart/DMA is correctly initialized, or signal it
 	while (HAL_UART_Receive_DMA(huart2, rx_buffer, UART_MSG_SIZE) != HAL_OK)
@@ -577,10 +588,8 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 		toggleLed();
 		HAL_Delay(300);
 	}
-
 	while(true) {
 		myboard.update();
-
 		HAL_Delay(waiting_time);
 	}
 }
