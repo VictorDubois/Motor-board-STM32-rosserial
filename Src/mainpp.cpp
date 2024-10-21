@@ -570,6 +570,9 @@ void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHand
 
 	__HAL_UART_CLEAR_OREFLAG(huart2); // Not sure if actually needed
 
+
+	// CAN sandbox, from https://controllerstech.com/can-protocol-in-stm32/
+
 	CAN_TxHeaderTypeDef   TxHeader;
 	uint8_t               TxData[8];
 	uint32_t              TxMailbox;
