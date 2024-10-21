@@ -108,6 +108,10 @@ void Error_Handler(void);
 #define SPI_CLK_GPIO_Port GPIOA
 #define ENC1_SIGA_PASSIVE_Pin GPIO_PIN_10
 #define ENC1_SIGA_PASSIVE_GPIO_Port GPIOA
+#define CAN_RX_Pin GPIO_PIN_11
+#define CAN_RX_GPIO_Port GPIOA
+#define CAN_TX_Pin GPIO_PIN_12
+#define CAN_TX_GPIO_Port GPIOA
 #define DBG2_Pin GPIO_PIN_15
 #define DBG2_GPIO_Port GPIOA
 #define PWM_B_Pin GPIO_PIN_4
