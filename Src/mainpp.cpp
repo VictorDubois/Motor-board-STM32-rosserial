@@ -282,7 +282,6 @@ void publish_odom_lighter(UART_HandleTypeDef * huart2)
 	tx_o_line_buffer[start_pos] = '\n';
 	start_pos += 1;
 
-
 	HAL_UART_Transmit_DMA(huart2, tx_o_line_buffer, start_pos);
 }
 
@@ -551,11 +550,62 @@ void toggleLed()
 	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5); // Toggle LED on GPIOA Pin 5
 }
 
-void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler, UART_HandleTypeDef * huart2)
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+	CAN_RxHeaderTypeDef   RxHeader;
+	uint8_t               RxData[8];
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	if ((RxHeader.StdId == 0x103))
+	{
+	    //datacheck = 1;
+	}
+}
+
+void loop(TIM_HandleTypeDef* a_motorTimHandler, TIM_HandleTypeDef* a_loopTimHandler, UART_HandleTypeDef * huart2, CAN_HandleTypeDef* hcan)
 {
 	MotorBoard myboard = MotorBoard(a_motorTimHandler, huart2);
 
 	__HAL_UART_CLEAR_OREFLAG(huart2); // Not sure if actually needed
+
+	CAN_TxHeaderTypeDef   TxHeader;
+	uint8_t               TxData[8];
+	uint32_t              TxMailbox;
+
+	TxHeader.IDE = CAN_ID_STD;
+	TxHeader.StdId = 0x446;
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.DLC = 2;
+
+	TxData[0] = 50;
+	TxData[1] = 0xAA;
+
+	if (HAL_CAN_AddTxMessage(hcan, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+	{
+	   Error_Handler ();
+	}
+
+	/*CAN_FilterTypeDef canfilterconfig;
+
+	canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+	canfilterconfig.FilterBank = 18;  // which filter bank to use from the assigned ones
+	canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	canfilterconfig.FilterIdHigh = 0x446<<5;
+	canfilterconfig.FilterIdLow = 0;
+	canfilterconfig.FilterMaskIdHigh = 0x446<<5;
+	canfilterconfig.FilterMaskIdLow = 0x0000;
+	canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+	canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+	canfilterconfig.SlaveStartFilterBank = 20;  // how many filters to assign to the CAN1 (master can)
+
+	HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);*/
+
+	if (HAL_CAN_ActivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+	{
+	  Error_Handler();
+	}
 
 	HAL_TIM_Base_Start_IT(a_loopTimHandler);
 	uint32_t waiting_time = 5;

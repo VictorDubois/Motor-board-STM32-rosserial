@@ -99,7 +99,7 @@ void toggleLed();
 
 
 void setup();
-void loop(TIM_HandleTypeDef* motorTimHandler, TIM_HandleTypeDef* loopTimHandler, UART_HandleTypeDef * huart2);
+void loop(TIM_HandleTypeDef* motorTimHandler, TIM_HandleTypeDef* loopTimHandler, UART_HandleTypeDef * huart2, CAN_HandleTypeDef* hcan);
 
 #ifdef __cplusplus
 }

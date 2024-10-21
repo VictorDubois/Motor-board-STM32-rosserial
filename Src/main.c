@@ -168,7 +168,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  loop(&htim3, &htim15, &huart2);
+	  loop(&htim3, &htim15, &huart2, &hcan);
 	  continue;
 
     /* USER CODE END WHILE */
