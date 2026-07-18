@@ -45,36 +45,36 @@ int CurrentReaderAdc::readADC(int adcnum)
 {
 	ADC_ChannelConfTypeDef sConfig = {0};
 	sConfig.Channel = ADC_CHANNEL_3;
-	  sConfig.Rank = ADC_REGULAR_RANK_1;
-	  sConfig.SamplingTime = ADC_SAMPLETIME_6CYCLES_5;
-	  sConfig.SingleDiff = ADC_SINGLE_ENDED;
-	  sConfig.OffsetNumber = ADC_OFFSET_NONE;
-	  sConfig.Offset = 0;
+	sConfig.Rank = ADC_REGULAR_RANK_1;
+	sConfig.SamplingTime = ADC_SAMPLETIME_6CYCLES_5;
+	sConfig.SingleDiff = ADC_SINGLE_ENDED;
+	sConfig.OffsetNumber = ADC_OFFSET_NONE;
+	sConfig.Offset = 0;
 
-	  if(adcnum == 1)
-	  {
-			sConfig.Channel = ADC_CHANNEL_4;
-	  }
+	if(adcnum == 1)
+	{
+		sConfig.Channel = ADC_CHANNEL_4;
+	}
 
-	  if (HAL_ADC_ConfigChannel(m_ADC_Handle, &sConfig) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-	  HAL_ADC_Start(m_ADC_Handle);
+	if (HAL_ADC_ConfigChannel(m_ADC_Handle, &sConfig) != HAL_OK)
+	{
+	Error_Handler();
+	}
+	HAL_ADC_Start(m_ADC_Handle);
 
-	  int32_t ret_code = HAL_ADC_PollForConversion(m_ADC_Handle, 100);
+	int32_t ret_code = HAL_ADC_PollForConversion(m_ADC_Handle, 100);
 
-	  if (ret_code == HAL_TIMEOUT)
-	  {
-		  HAL_ADC_Stop(m_ADC_Handle);
-		  return -1;
-	  }
-
-	  uint32_t adc_val = HAL_ADC_GetValue(m_ADC_Handle);
-
+	if (ret_code == HAL_TIMEOUT)
+	{
 	  HAL_ADC_Stop(m_ADC_Handle);
+	  return -1;
+	}
 
-	  return adc_val;
+	uint32_t adc_val = HAL_ADC_GetValue(m_ADC_Handle);
+
+	HAL_ADC_Stop(m_ADC_Handle);
+
+	return adc_val;
 }
 
 int CurrentReaderMCP3002::readADC(int adcnum)
