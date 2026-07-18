@@ -8,6 +8,7 @@
 #ifndef INC_CALLBACKS_H_
 #define INC_CALLBACKS_H_
 
+#include "msgs.h"
 
 
 void motors_cmd_hex_cb(const uint8_t* a_message);

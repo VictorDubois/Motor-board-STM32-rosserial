@@ -10,8 +10,8 @@
 
 #include "stm32g4xx_hal.h"
 #include "DCMotor.h"
-#include <CanStruct/can_structs.h>
 #include <CurrentReader.h>
+#include "canManager.h"
 
 #define UPDATE_FREQ 10
 #define MS_BETWEEN_UPDATES 1000/UPDATE_FREQ
@@ -38,6 +38,7 @@ private:
 	static CurrentReaderCan currentReader;
 	static volatile int32_t last_encoder_left;
 	static volatile int32_t last_encoder_right;
+	CanBroker canBroker;
 
 	static volatile int32_t int32_t_encoder_left;
 	static volatile int32_t int32_t_encoder_right;
